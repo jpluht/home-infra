@@ -1,0 +1,12 @@
+gpu_nodes:
+  hosts:
+    gpu_node_1:
+      ip: 192.168.2.10
+      some_variable: value
+    gpu_node_2:
+      ip: 192.168.2.11
+      some_variable: value
+
+# Voit myös määrittää ryhmän yleisiä muuttujia kuten:
+gpu_node_vars:
+  example_param: foo

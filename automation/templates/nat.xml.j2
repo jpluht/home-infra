@@ -1,0 +1,16 @@
+<nat>
+  {% if nat_rules is defined and nat_rules | length > 0 %}
+    {% for rule in nat_rules %}
+    <rule>
+      <descr>{{ rule.description }}</descr>
+      <interface>{{ rule.interface }}</interface>
+      <source>{{ rule.source }}</source>
+      <destination>{{ rule.destination }}</destination>
+      <type>{{ rule.nat_type | default('automatic') }}</type>
+    </rule>
+    {% endfor %}
+  {% else %}
+  <!-- NAT is handled by ISP; no manual NAT configuration required -->
+  </nat>
+  {% endif %}
+</nat>

@@ -1,0 +1,8 @@
+---
+collections:
+  - name: ansible.netcommon
+    version: ">=5.0.0"
+  - name: community.general
+    version: ">=7.0.0"
+  - name: ansibleguy.opnsense
+    source: https://github.com/O-X-L/ansible-opnsense.git

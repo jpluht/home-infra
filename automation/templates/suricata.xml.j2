@@ -1,0 +1,24 @@
+<suricata>
+  <enabled>{{ suricata_enabled | default(false) | lower }}</enabled>
+  <rules>
+    {% if suricata_rules is defined %}
+      {% for rule in suricata_rules %}
+        <rule>{{ rule }}</rule>
+      {% endfor %}
+    {% else %}
+      <!-- No rules defined -->
+    {% endif %}
+  </rules>
+  <logging>
+    <enabled>true</enabled>
+    <log_dir>/var/log/suricata</log_dir>
+    <log_level>info</log_level>
+  </logging>
+  <alerting>
+    <enabled>true</enabled>
+  </alerting>
+  <interface>wan</interface>
+  <blocking>
+    <enabled>true</enabled>
+  </blocking>
+</suricata>

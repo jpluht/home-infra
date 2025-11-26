@@ -1,0 +1,31 @@
+---
+- name: Configure VLANs and Ports on Cisco 3750 PoE Switch
+  hosts: power_switch
+  collections:
+    - cisco.ios
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Create VLANs on PoE switch
+      cisco.ios.ios_vlans:
+        vlan_id: "{{ item.id }}"
+        name: "{{ item.name }}"
+        state: present
+      loop: "{{ vlan_definitions }}"
+
+    - name: Configure trunk ports on PoE switch
+      cisco.ios.ios_interfaces:
+        name: "{{ item }}"
+        mode: trunk
+        trunk_vlans: "10,20,30,40,50"
+        description: "Trunk port for uplink to TS"
+      loop: "{{ trunk_ports }}"
+
+    - name: Configure AP access ports (VLAN 10 Infra)
+      cisco.ios.ios_interfaces:
+        name: "{{ item }}"
+        mode: access
+        access_vlan: 10
+        description: "AP access port VLAN 10 Infra (managed by CVWN)"
+      loop: "{{ ap_access_ports }}"

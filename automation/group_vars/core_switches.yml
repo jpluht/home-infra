@@ -1,0 +1,28 @@
+vlan_definitions:
+      - id: 10
+        name: Rivendell
+      - id: 20
+        name: Fellowship
+      - id: 30
+        name: Shire
+      - id: 40
+        name: Mordor
+      - id: 50
+        name: Mirkwood
+
+trunk_ports:
+      - GigabitEthernet1/0/1  # Palomuuri - TS1 slot 1 portti 1
+      - GigabitEthernet2/0/1  # Palomuuri - TS2 slot 2 portti 1
+      - GigabitEthernet1/0/2  # TS1 uplink portti 2 trunk PoE
+      - GigabitEthernet2/0/2  # TS2 uplink portti 2 trunk PoE
+
+poweredge_ports:
+      - GigabitEthernet1/0/37  # TS1 portti 37 PowerEdge infra VLAN 10
+
+access_ports:
+      rivendell: 
+        - GigabitEthernet1/0/37             # VLAN 10, infra-portti (Palomuuri, kytkimet, AP:t ja Palvelinten runko)
+      fellowship: []                        # VLAN 20, luotetut henkilökohtaiset laitteet
+      shire: []                             # VLAN 30, perheen viihde- ja pelikonsolit
+      mordor: []                            # VLAN 40, VM:t
+      mirkwood: []                          # VLAN 50, IoT ja eristetyt laitteet

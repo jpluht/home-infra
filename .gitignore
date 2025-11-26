@@ -1,0 +1,56 @@
+# Pythonin ja virtualenvin väliaikaistiedostot
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Ansible retry-, diff- ja backup-tiedostot
+*.retry
+*_diff.*
+*_backup.*
+*.log
+
+# Ansible debug / output
+*.out
+*.tmp
+
+# SSH-avaimet/secrets (älä koskaan lisää oikeita tuotantoavaimia repoosi)
+*.pem
+*.key
+*.crt
+*.id_rsa
+*.id_rsa.pub
+
+# Editorien/metatiedostot
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testauksen/laboratorion lokaaleja tiedostoja
+*.local
+.env
+
+# Virtuaaliympäristöt
+venv310/
+venv/
+__pycache__/
+*.pyc
+
+# Salasanat ja salatut tiedostot
+.vault_pass
+group_vars/all/vault.yml
+inventory/hosts
+
+# Temporäärinen data
+*.tmp
+*.log
+
+# IDE-tiedostot
+.vscode/
+.idea/
+*.swp

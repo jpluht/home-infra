@@ -1,0 +1,29 @@
+vlan_definitions:
+  - id: 10
+    name: Rivendell
+  - id: 20
+    name: Fellowship
+  - id: 30
+    name: Shire
+  - id: 40
+    name: Mordor
+  - id: 50
+    name: Mirkwood
+
+trunk_ports:
+  - GigabitEthernet1/0/2
+  - GigabitEthernet1/0/3
+
+ap_access_ports:
+  - GigabitEthernet1/0/25
+  - GigabitEthernet1/0/26
+  - GigabitEthernet1/0/27
+  - GigabitEthernet1/0/28
+  - GigabitEthernet1/0/29
+  - GigabitEthernet1/0/30
+  - GigabitEthernet1/0/31
+  - GigabitEthernet1/0/32
+  - GigabitEthernet1/0/33
+  - GigabitEthernet1/0/34
+  - GigabitEthernet1/0/35
+  - GigabitEthernet1/0/36

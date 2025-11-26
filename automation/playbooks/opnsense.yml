@@ -1,0 +1,83 @@
+---
+- name: Configure OPNsense Firewall and Router
+  hosts: opnsense
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: Ensure VLANs are configured
+      ansible.builtin.template:
+        src: templates/vlans.xml.j2
+        dest: /conf/config.xml
+        backup: yes
+      notify: restart opnsense
+
+    - name: Configure DHCP servers for VLANs
+      ansible.builtin.template:
+        src: templates/dhcp.xml.j2
+        dest: /conf/dhcpd.conf
+        backup: yes
+      notify: restart dhcpd
+
+
+    - name: Apply firewall rules
+      ansible.builtin.shell: configctl filter reload
+      when: firewall_rules is defined
+
+    - name: Configure NAT rules
+      ansible.builtin.template:
+        src: templates/nat.xml.j2
+        dest: /conf/nat.xml
+        backup: yes
+      notify: apply nat rules
+
+    - name: Configure NTP servers
+      ansible.builtin.template:
+        src: templates/ntp.xml.j2
+        dest: /conf/ntp.xml
+        backup: yes
+      notify: restart ntp
+
+    - name: Configure DNSBL lists
+      ansible.builtin.template:
+        src: templates/dnsbl.xml.j2
+        dest: /conf/dnsbl.xml
+        backup: yes
+      notify: restart dnsbl
+
+    - name: Configure Suricata IDS/IPS
+      ansible.builtin.template:
+        src: templates/suricata.xml.j2
+        dest: /conf/suricata.xml
+        backup: yes
+      notify: restart suricata
+
+  handlers:
+    - name: restart opnsense
+      ansible.builtin.service:
+        name: configd
+        state: restarted
+
+    - name: restart dhcpd
+      ansible.builtin.service:
+        name: dhcpd
+        state: restarted
+
+    - name: apply nat rules
+      ansible.builtin.shell: configctl filter reload
+
+    - name: restart ntp
+      ansible.builtin.service:
+        name: ntpd
+        state: restarted
+
+    - name: restart dnsbl
+      ansible.builtin.service:
+        name: dnsbl
+        state: restarted
+
+    - name: restart suricata
+      ansible.builtin.service:
+        name: suricata
+        state: restarted
+

@@ -1,0 +1,33 @@
+<dhcpd>
+{% for vlan_cfg in dhcp.enabled_vlans %}
+  {% set vlan = vlans | selectattr("id", "equalto", vlan_cfg.vlan_id) | first %}
+  <subnet>
+    <subnet>{{ vlan.subnet | ipaddr('network') }}</subnet>
+    <mask>{{ vlan.subnet | ipaddr('netmask') }}</mask>
+    <range>
+      <from>{{ vlan_cfg.range_start }}</from>
+      <to>{{ vlan_cfg.range_end }}</to>
+    </range>
+    <gateway>{{ vlan.gateway }}</gateway>
+    <domain>{{ domain_name | default('localdomain') }}</domain>
+    <dnsservers>
+      {% for dns in dns_servers | default(['8.8.8.8', '8.8.4.4']) %}
+      <dns>{{ dns }}</dns>
+      {% endfor %}
+    </dnsservers>
+
+    {% if vlan_cfg.static_allocations is defined %}
+    <clients>
+      {% for client in vlan_cfg.static_allocations %}
+      <client>
+        <hw-address>{{ client.mac }}</hw-address>
+        <ip-address>{{ client.ip }}</ip-address>
+        <hostname>{{ client.hostname }}</hostname>
+      </client>
+      {% endfor %}
+    </clients>
+    {% endif %}
+
+  </subnet>
+{% endfor %}
+</dhcpd>

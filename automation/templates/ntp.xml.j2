@@ -1,0 +1,8 @@
+<ntp>
+{% for server in ntp_servers %}
+  <server>
+    <host>{{ server }}</host>
+    <prefer>1</prefer>
+  </server>
+{% endfor %}
+</ntp>

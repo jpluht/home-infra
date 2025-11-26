@@ -1,0 +1,138 @@
+---
+# VLAN Configuration
+vlans:
+  - id: 10
+    name: Rivendell
+    description: "Infra network"
+    subnet: 192.168.10.0/24
+    gateway: 192.168.10.1
+  - id: 20
+    name: Fellowship
+    description: "Trusted personal devices"
+    subnet: 192.168.20.0/24
+    gateway: 192.168.20.1
+  - id: 30
+    name: Shire
+    description: "Home entertainment and gaming"
+    subnet: 192.168.30.0/24
+    gateway: 192.168.30.1
+  - id: 40
+    name: Mordor
+    description: "Virtual machines"
+    subnet: 192.168.40.0/24
+    gateway: 192.168.40.1
+  - id: 50
+    name: Mirkwood
+    description: "IoT and isolated devices"
+    subnet: 192.168.50.0/24
+    gateway: 192.168.50.1
+
+# DHCP configuration for VLANs
+dhcp:
+  enabled_vlans:
+    - vlan_id: 30
+      range_start: 192.168.30.100
+      range_end: 192.168.30.200
+      static_allocations:
+        - mac: "00:11:22:33:44:55"
+          ip: 192.168.30.50
+          hostname: "server1"
+        - mac: "00:11:22:33:44:66"
+          ip: 192.168.30.51
+          hostname: "server2"
+
+    - vlan_id: 50
+      range_start: 192.168.50.100
+      range_end: 192.168.50.200
+
+
+# Firewall rules
+firewall:
+  allow:
+    - name: "Allow Proxmox to VLAN 20 trusted MACs"
+      interface: "opt1"  # VLAN 10 interface
+      action: pass
+      protocol: any
+      source_ip: 192.168.10.10
+      destination_subnet: 192.168.20.0/24
+      allowed_macs:
+        - "aa:bb:cc:dd:ee:ff"
+        - "11:22:33:44:55:66"
+  block:
+    - name: "Block IoT VLAN 50 to WAN"
+      interface: "opt4"  # VLAN 50 interface
+      action: block
+      protocol: any
+      source_subnet: 192.168.50.0/24
+      destination: any
+
+    - name: "Block IoT VLAN 50 to other VLANs"
+      interface: "opt4"
+      action: block
+      protocol: any
+      source_subnet: 192.168.50.0/24
+      destination_exclude: 192.168.50.0/24
+
+# NAT rules
+nat_rules:
+  - description: "Outbound NAT for all traffic via WAN"
+    interface: wan
+    source: any
+    destination: any
+    type: automatic
+
+# NTP Servers
+ntp:
+  servers:
+    - 0.europe.pool.ntp.org
+    - 1.europe.pool.ntp.org
+    - 2.europe.pool.ntp.org
+
+# SSH settings
+ssh:
+  permit_root_login: false
+  allow_users:
+    - admin
+    - ansible
+
+# VPN (WireGuard)
+vpn_wireguard:
+  enabled: true
+  peers:
+    - name: T440
+      public_key: "xxx"
+      allowed_ips: "192.168.10.0/24"
+      endpoint: "vpn.example.com:51820"
+      persistent_keepalive: 25
+
+# DNSBL & pfBlockerNG
+dnsbl_enabled: true
+dnsbl_blocklists:
+  - "https://example.com/malicious-hosts.txt"
+  - "https://example.com/ad-servers.txt"
+
+
+pfblockerng:
+  enabled: true
+  dnsbl_lists:
+    - "https://example.com/blacklist1.txt"
+
+# Suricata IDS/IPS
+suricata_enabled: true
+suricata_rules:
+  - "emerging-threats"
+  - "bleeding-edge"
+
+
+# Logging example
+logging:
+  syslog_enabled: true
+  syslog_server: 192.168.10.100
+  syslog_protocol: udp
+  syslog_port: 514
+
+# DNS
+domain_name: "example.local"
+dns_servers:
+  - 1.1.1.1
+  - 8.8.8.8

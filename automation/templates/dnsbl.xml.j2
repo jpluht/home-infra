@@ -1,0 +1,15 @@
+<dnsbl>
+  {% if dnsbl_enabled %}
+  <enabled>true</enabled>
+  <blocklists>
+    {% for url in dnsbl_blocklists %}
+    <blocklist>
+      <url>{{ url }}</url>
+      <enabled>true</enabled>
+    </blocklist>
+    {% endfor %}
+  </blocklists>
+  {% else %}
+  <enabled>false</enabled>
+  {% endif %}
+</dnsbl>

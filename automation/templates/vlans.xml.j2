@@ -1,0 +1,7 @@
+{% for vlan in vlans %}
+<vlan>
+    <if>igb{{ loop.index }}</if>
+    <tag>{{ vlan.id }}</tag>
+    <descr>{{ vlan.name }}</descr>
+</vlan>
+{% endfor %}

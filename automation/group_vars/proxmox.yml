@@ -1,0 +1,8 @@
+# group_vars/proxmox.yml
+proxmox_hosts:
+  proxmox_1:
+    ip: 192.168.4.10
+    cluster_member: true
+  proxmox_2:
+    ip: 192.168.4.11
+    cluster_member: true
