@@ -56,14 +56,65 @@ This personal home lab project aims to document and learn the full process of bu
 
 ## Security & Privacy Notice
 
-This repository contains no sensitive data, passwords, or production credentials.  
-Configuration files include placeholder values or encrypted secrets managed via Ansible Vault.
+**This public repository contains no sensitive data, passwords, or production credentials.**
+
+- Configuration files include **placeholder values** only
+- Encrypted secrets managed via **Ansible Vault** (vault password never committed)
+- **Actual infrastructure details stored locally** in `.private/` directory (git-ignored)
+
+### 🔐 Private Infrastructure Information
+
+This project uses a **public/private separation model** for GitHub-ready documentation:
+
+**📖 Public (in Git):**
+- Generic playbooks with example variables
+- Security policies and best practices
+- Documentation templates
+- Installation guides
+
+**🔒 Private (local only, git-ignored):**
+- Actual device IPs and credentials
+- Real VLAN names and assignments
+- Network topology specifics
+- Firewall rules for your setup
+
+**How to use this:**
+
+1. **Clone this repo** (public content only)
+   ```bash
+   git clone https://github.com/your-username/home-infra.git
+   cd home-infra
+   ```
+
+2. **Create private directory** (local storage)
+   ```bash
+   mkdir -p .private/{inventory,network,credentials,security}
+   ```
+
+3. **Populate with your infrastructure** (never committed)
+   ```bash
+   # Copy example inventory and customize with your IPs
+   cp automation/inventory/hosts.example .private/inventory/hosts.yml
+   # Edit with your actual infrastructure details
+   ```
+
+4. **Run Ansible against your infrastructure**
+   ```bash
+   ansible-playbook playbooks/opnsense.yml \
+     --inventory .private/inventory/hosts.yml \
+     --vault-password-file .private/credentials/vault_password.txt \
+     --check
+   ```
+
+See **[`.private/README.md`](.private/README.md)** for complete setup and usage guide.
 
 ---
 
 ## Getting Started
 
-Please see the [automation/README.md](automation/README.md) for setup instructions on running Ansible playbooks and securely managing secrets.
+1. **For understanding the architecture**: See [automation/README.md](automation/README.md) and [docs/](docs/) for guides
+2. **For setting up on your infrastructure**: Follow the workflow in [`.private/README.md`](.private/README.md)
+3. **For managing secrets securely**: See [OPSEC_POLICY.md](OPSEC_POLICY.md)
 
 ---
 
@@ -76,3 +127,9 @@ This is primarily a personal learning project, but suggestions and improvements 
 ## Acknowledgments
 
 Inspired by open-source projects and hands-on homelab communities focusing on practical cybersecurity, automation, and modern infrastructure principles.
+
+---
+
+## Local documentation moved
+
+Most of the detailed markdown files were moved into `docs/root_docs/` to keep the repository root tidy. See `docs/root_docs/` for deployment checklists, audits, and implementation notes.
