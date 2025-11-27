@@ -1,31 +1,105 @@
 ---
-- name: Configure VLANs and Ports on Cisco 3750 PoE Switch
-  hosts: power_switch
+- name: "Configure VLANs, Ports, and PoE on Cisco 3750 PoE Switches"
+  hosts: poe_switches
   collections:
     - cisco.ios
-  gather_facts: no
+  gather_facts: yes
   connection: network_cli
+  tags:
+    - setup
+    - network
+    - poe
+
+  vars:
+    debug_output_dir: "/tmp/ansible_poe_debug"
+    vlan_list: "{{ vault_config.vlans | map(attribute='id') | join(',') }}"
+
+  pre_tasks:
+    - name: "Load vault configuration"
+      include_vars:
+        file: "{{ playbook_dir }}/../.private/vault-config.yml"
+        name: vault_config
+      tags: ["always"]
+
+    - name: "Display PoE switch configuration (preview mode)"
+      debug:
+        msg: |
+          PoE Switch Setup Preview:
+          - Switch: {{ inventory_hostname }}
+          - VLANs to configure: {{ vault_config.vlans | map(attribute='name') | join(', ') }}
+          - Trunk ports: {{ vault_config.switch_config.get(inventory_hostname, {}).get('trunk_ports', []) | join(', ') }}
+          - PoE budget: {{ poe_budget | default('Not specified') }}
+      tags: ["preview", "summary"]
 
   tasks:
-    - name: Create VLANs on PoE switch
+    - name: "Create VLANs on PoE switch"
       cisco.ios.ios_vlans:
         vlan_id: "{{ item.id }}"
         name: "{{ item.name }}"
         state: present
-      loop: "{{ vlan_definitions }}"
+      loop: "{{ vault_config.vlans }}"
+      tags: ["vlans"]
 
-    - name: Configure trunk ports on PoE switch
+    - name: "Configure trunk ports on PoE switch"
       cisco.ios.ios_interfaces:
         name: "{{ item }}"
         mode: trunk
-        trunk_vlans: "10,20,30,40,50"
-        description: "Trunk port for uplink"
-      loop: "{{ trunk_ports }}"
+        trunk_vlans: "{{ vlan_list }}"
+        description: "Trunk port to core switch"
+      loop: "{{ vault_config.switch_config.get(inventory_hostname, {}).get('trunk_ports', []) }}"
+      tags: ["ports", "trunk"]
 
-    - name: Configure access ports (VLAN 10 Infrastructure)
+    - name: "Configure access ports with VLAN assignment"
       cisco.ios.ios_interfaces:
-        name: "{{ item }}"
+        name: "{{ item.interface }}"
         mode: access
-        access_vlan: 10
-        description: "Access port VLAN 10 Infrastructure"
-      loop: "{{ access_ports }}"
+        access_vlan: "{{ item.vlan_id }}"
+        description: "Access port VLAN {{ item.vlan_id }} - {{ item.description }}"
+      loop: "{{ vault_config.switch_config.get(inventory_hostname, {}).get('access_ports', []) }}"
+      tags: ["ports", "access"]
+
+    - name: "Configure PoE on access ports (if applicable)"
+      cisco.ios.ios_config:
+        lines:
+          - "power inline auto"
+          - "power inline max 30000"
+        parents: "interface {{ item.interface }}"
+      loop: "{{ vault_config.switch_config.get(inventory_hostname, {}).get('access_ports', []) }}"
+      tags: ["poe", "power"]
+      when: vault_config.switch_config.get(inventory_hostname, {}).get('poe_enabled', false)
+
+    - name: "Display current switch config"
+      cisco.ios.ios_command:
+        commands:
+          - "show vlan brief"
+          - "show interfaces trunk"
+      register: switch_info
+      changed_when: false
+      tags: ["summary", "verify"]
+
+    - name: "Export PoE switch configuration"
+      copy:
+        dest: "{{ debug_output_dir }}/poe_switch_config_{{ inventory_hostname }}.txt"
+        content: |
+          PoE Switch Configuration - {{ inventory_hostname }}
+          =============================================
+          
+          VLANs Configured:
+          {{ switch_info.stdout_lines[0] | join('\n') }}
+          
+          Trunk Interfaces:
+          {{ switch_info.stdout_lines[1] | join('\n') }}
+      tags: ["debug", "export"]
+
+  post_tasks:
+    - name: "Display summary"
+      debug:
+        msg: |
+          ===== PoE Switch Configuration Complete =====
+          Switch: {{ inventory_hostname }}
+          VLANs: {{ vault_config.vlans | length }}
+          Trunks: {{ vault_config.switch_config.get(inventory_hostname, {}).get('trunk_ports', []) | length }}
+          Access Ports: {{ vault_config.switch_config.get(inventory_hostname, {}).get('access_ports', []) | length }}
+          PoE Enabled: {{ vault_config.switch_config.get(inventory_hostname, {}).get('poe_enabled', false) }}
+          =============================================
+      tags: ["summary"]
