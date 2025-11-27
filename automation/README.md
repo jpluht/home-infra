@@ -537,6 +537,7 @@ ansible-playbook playbooks/deploy-network.yml -vvv
 - **VAULT_GUIDE.md** — Comprehensive Ansible Vault setup and secrets management
 - **docs/03-automation/ansible-overview.md** — Ansible architecture and best practices
 - **docs/03-automation/playbooks-and-templates.md** — Detailed playbook and template documentation
+- **docs/03-automation/vlan-connectivity.md** — 🔥 **VLAN routing, firewall rules, inter-VLAN policies** (ESSENTIAL READ)
 - **docs/03-automation/automation-roadmap.md** — Project roadmap and planned improvements
 - **docs/03-automation/troubleshooting.md** — Detailed troubleshooting guide
 
