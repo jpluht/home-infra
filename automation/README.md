@@ -49,9 +49,39 @@ ansible-playbook -i inventory/hosts playbooks/opnsense.yml
 
 ## Vault and Secrets Management
 
-- Use Ansible Vault to encrypt sensitive data under `group_vars/all/vault.yml`.
-- Never commit vault passwords or unencrypted secrets.
-- See [main README](../README.md) for overall guidance.
+### Overview
+VLAN names and other sensitive network topology information are encrypted using Ansible Vault.
+
+### Encrypted Data
+- `group_vars/all/vault.yml` - Contains encrypted VLAN names:
+  - `vault_vlan_10_name` - Infrastructure VLAN
+  - `vault_vlan_20_name` - Trusted devices VLAN
+  - `vault_vlan_30_name` - User devices VLAN
+  - `vault_vlan_40_name` - Virtual machines VLAN
+  - `vault_vlan_50_name` - IoT isolated VLAN
+
+### Using Vault
+
+**View encrypted content:**
+```bash
+ansible-vault view group_vars/all/vault.yml --vault-password-file=.vault_pass
+```
+
+**Edit encrypted content:**
+```bash
+ansible-vault edit group_vars/all/vault.yml --vault-password-file=.vault_pass
+```
+
+**Running playbooks with vault:**
+```bash
+ansible-playbook -i inventory/hosts playbooks/core_switches.yml --vault-password-file=.vault_pass
+```
+
+### Security Best Practices
+- Never commit `.vault_pass` or vault passwords to Git (already in `.gitignore`)
+- Never commit unencrypted `vault.yml` to Git (already in `.gitignore`)
+- Rotate vault passwords periodically
+- Store `.vault_pass` in a secure location (not shared)
 
 ---
 

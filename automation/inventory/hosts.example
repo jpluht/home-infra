@@ -1,0 +1,135 @@
+# Example Ansible Inventory
+# 
+# IMPORTANT: This is a PUBLIC EXAMPLE FILE
+# For actual device IPs and credentials, use: .private/inventory/hosts.yml
+# 
+# To use:
+#   1. Copy this file to .private/inventory/hosts.yml
+#   2. Replace <PLACEHOLDER_*> values with your actual infrastructure
+#   3. Add .private/inventory/ to .gitignore (already done)
+#   4. Run playbooks with: --inventory .private/inventory/hosts.yml
+
+all:
+  vars:
+    # SSH connection settings (replace with your private key path)
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa
+    ansible_user: admin
+    ansible_connection: network_cli
+    ansible_network_os: opnsense
+    
+  children:
+    # ========================================
+    # Core Network Infrastructure
+    # ========================================
+    opnsense:
+      hosts:
+        fw_main:
+          # Replace with your actual firewall management IP
+          ansible_host: <PLACEHOLDER_OPNSENSE_IP>
+          # OOB console access (for recovery)
+          console_port: /dev/ttyUSB0
+          console_speed: 115200
+    
+    core_switches:
+      hosts:
+        core_switch_1:
+          # Replace with actual switch IP
+          ansible_host: <PLACEHOLDER_CORE_SWITCH_1_IP>
+          # SSH credentials (store in vault)
+          ansible_user: <PLACEHOLDER_ADMIN_USER>
+          # Device model (for playbook conditionals)
+          device_model: "Cisco_Catalyst"
+          device_role: "core_switching"
+    
+    poe_switches:
+      hosts:
+        poe_switch_1:
+          ansible_host: <PLACEHOLDER_POE_SWITCH_1_IP>
+          ansible_user: <PLACEHOLDER_ADMIN_USER>
+          device_model: "Cisco_PoE"
+          device_role: "poe_switching"
+    
+    # ========================================
+    # Compute Platforms
+    # ========================================
+    proxmox:
+      hosts:
+        proxmox_node_1:
+          # Hypervisor management IP (VLAN 20 / Infrastructure)
+          ansible_host: <PLACEHOLDER_PROXMOX_IP>
+          ansible_user: root
+          ansible_password: <PLACEHOLDER_VAULT_PROXMOX_PASS>
+          proxmox_api_url: "https://<PLACEHOLDER_PROXMOX_IP>:8006/api2/json"
+          # Node name in Proxmox cluster
+          node_name: "hypervisor-01"
+          storage_backend: "ceph"
+    
+    gpu_node:
+      hosts:
+        gpu_compute:
+          # GPU compute node (for ML workloads)
+          ansible_host: <PLACEHOLDER_GPU_NODE_IP>
+          ansible_user: admin
+          gpu_count: 2
+          gpu_model: "A100"
+          cuda_version: "12.1"
+    
+    # ========================================
+    # Group Variables (Applied to all hosts)
+    # ========================================
+
+# ========================================
+# VLAN and Network Group Variables
+# ========================================
+# Replace these with your actual network layout
+# See .private/network/vlan_mapping.yml for your real assignments
+
+vars:
+  # Management VLAN (out-of-band)
+  mgmt_vlan: 10
+  mgmt_subnet: "<PLACEHOLDER_MGMT_SUBNET>"
+  mgmt_gateway: "<PLACEHOLDER_MGMT_GW>"
+  
+  # Infrastructure VLAN (trusted devices)
+  infra_vlan: 20
+  infra_subnet: "<PLACEHOLDER_INFRA_SUBNET>"
+  infra_gateway: "<PLACEHOLDER_INFRA_GW>"
+  
+  # User VLAN (workstations)
+  user_vlan: 30
+  user_subnet: "<PLACEHOLDER_USER_SUBNET>"
+  user_gateway: "<PLACEHOLDER_USER_GW>"
+  
+  # VM VLAN (guest systems)
+  vm_vlan: 40
+  vm_subnet: "<PLACEHOLDER_VM_SUBNET>"
+  vm_gateway: "<PLACEHOLDER_VM_GW>"
+  
+  # IoT VLAN (isolated devices)
+  iot_vlan: 50
+  iot_subnet: "<PLACEHOLDER_IOT_SUBNET>"
+  iot_gateway: "<PLACEHOLDER_IOT_GW>"
+
+# ========================================
+# Example: Running Playbooks
+# ========================================
+# 
+# 1. Dry-run with checks (no changes):
+#    ansible-playbook playbooks/opnsense.yml \
+#      --inventory .private/inventory/hosts.yml \
+#      --vault-password-file .private/credentials/vault_password.txt \
+#      --check
+#
+# 2. Apply changes:
+#    ansible-playbook playbooks/opnsense.yml \
+#      --inventory .private/inventory/hosts.yml \
+#      --vault-password-file .private/credentials/vault_password.txt
+#
+# 3. List all hosts:
+#    ansible-inventory --inventory .private/inventory/hosts.yml \
+#      --list | jq '.all.hosts | keys'
+#
+# 4. Ping all hosts:
+#    ansible all \
+#      --inventory .private/inventory/hosts.yml \
+#      -m ping

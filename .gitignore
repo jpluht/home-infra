@@ -42,9 +42,16 @@ __pycache__/
 *.pyc
 
 # Salasanat ja salatut tiedostot
-.vault_pass
+.vault_pass                 # Moved to .private/credentials/
+.private/credentials/*.txt  # Vault password files
 group_vars/all/vault.yml
 inventory/hosts
+
+# ⛔ CRITICAL: Private infrastructure information (NEVER commit)
+.private/
+.private/**
+.private/**/*
+.private_backup.*
 
 # Temporäärinen data
 *.tmp
@@ -54,3 +61,4 @@ inventory/hosts
 .vscode/
 .idea/
 *.swp
+

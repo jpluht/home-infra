@@ -112,9 +112,19 @@ See **[`.private/README.md`](.private/README.md)** for complete setup and usage 
 
 ## Getting Started
 
-1. **For understanding the architecture**: See [automation/README.md](automation/README.md) and [docs/](docs/) for guides
-2. **For setting up on your infrastructure**: Follow the workflow in [`.private/README.md`](.private/README.md)
-3. **For managing secrets securely**: See [OPSEC_POLICY.md](OPSEC_POLICY.md)
+1. **For active Ansible automation**: See [automation/README.md](automation/README.md) — this is the core of the project
+2. **For reference documentation**: See [docs/](docs/) for hardware guides, setup procedures, security policies, and automation concepts
+3. **For setting up on your infrastructure**: Follow the workflow in [`.private/README.md`](.private/README.md)
+4. **For managing secrets securely**: Reference guides moved to `.private/old/docs_root_docs/` (includes deployment checklists, setup guides, OPSEC policy)
+
+---
+
+## Repository Philosophy
+
+- **`automation/`** — Live, active Ansible code (playbooks, templates, group_vars, inventory structure)
+- **`docs/`** — Reference documentation (hardware, setup, security, automation concepts)
+- **`.private/`** — Your local infrastructure (git-ignored; never committed)
+- **`.private/old/`** — Historical/reference files (archived for future reference)
 
 ---
 
@@ -127,9 +137,3 @@ This is primarily a personal learning project, but suggestions and improvements 
 ## Acknowledgments
 
 Inspired by open-source projects and hands-on homelab communities focusing on practical cybersecurity, automation, and modern infrastructure principles.
-
----
-
-## Local documentation moved
-
-Most of the detailed markdown files were moved into `docs/root_docs/` to keep the repository root tidy. See `docs/root_docs/` for deployment checklists, audits, and implementation notes.

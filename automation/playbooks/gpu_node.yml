@@ -3,10 +3,13 @@
   hosts: gpu_node
   become: yes
   gather_facts: yes
+  collections:
+    - ansible.posix
+    - community.general
 
   vars:
-    iscsi_target_ip: "{{ gpu_node_vars.iscsi_target_ip | default('192.168.2.100') }}"
-    iscsi_target_iqn: "{{ gpu_node_vars.iscsi_target_iqn | default('iqn.2024-01.com.example:target') }}"
+    iscsi_target_ip: "{{ gpu_node_vars.iscsi_target_ip | default('10.0.1.20') }}"
+    iscsi_target_iqn: "{{ gpu_node_vars.iscsi_target_iqn | default('iqn.2024-01.local.cluster:target') }}"
     llm_models_dir: "/opt/llm_models"
     python_version: "3.10"
 
@@ -14,7 +17,7 @@
     - name: Update package cache
       apt:
         update_cache: yes
-      when: ansible_os_family == 'Debian'
+      when: ansible_os_family in ['Debian', 'Ubuntu']
 
     - name: Install essential packages
       apt:
@@ -28,7 +31,7 @@
           - open-iscsi
           - multipath-tools
         state: present
-      when: ansible_os_family == 'Debian'
+      when: ansible_os_family in ['Debian', 'Ubuntu']
 
     - name: Install NVIDIA drivers and CUDA (if GPU present)
       apt:
@@ -36,7 +39,8 @@
           - nvidia-driver-470
           - nvidia-cuda-toolkit
         state: present
-      when: ansible_devices | selectattr('vendor', 'equalto', 'NVIDIA') | list | length > 0
+      ignore_errors: yes
+      when: ansible_os_family in ['Debian', 'Ubuntu']
 
     - name: Install Python packages for LLM
       pip:
@@ -66,10 +70,12 @@
     - name: Discover iSCSI targets
       command: iscsiadm -m discovery -t sendtargets -p {{ iscsi_target_ip }}
       register: discovery_output
+      ignore_errors: yes
 
     - name: Login to iSCSI target
       command: iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --login
       when: discovery_output.rc == 0
+      ignore_errors: yes
 
     - name: Ensure multipath is configured
       service:
@@ -77,23 +83,19 @@
         state: started
         enabled: yes
 
-    - name: Mount iSCSI drives (assuming /dev/sdb)
-      mount:
-        path: /mnt/iscsi
-        src: /dev/sdb1
-        fstype: ext4
-        state: mounted
-      when: ansible_devices.sdb is defined
+    - name: Create LLM models directory structure
+      file:
+        path: "{{ llm_models_dir }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - cache
+        - models
+        - scripts
 
-    - name: Clone a sample LLM model repository
-      git:
-        repo: https://github.com/huggingface/transformers.git
-        dest: "{{ llm_models_dir }}/transformers"
-        version: main
-
-    - name: Set up a basic LLM inference script
+    - name: Set up basic LLM inference script
       copy:
-        dest: "{{ llm_models_dir }}/inference.py"
+        dest: "{{ llm_models_dir }}/scripts/inference.py"
         content: |
           #!/usr/bin/env python3
           from transformers import pipeline
@@ -102,7 +104,7 @@
           def main():
               device = 0 if torch.cuda.is_available() else -1
               classifier = pipeline("sentiment-analysis", device=device)
-              result = classifier("I love using transformers!")
+              result = classifier("Test input")
               print(result)
 
           if __name__ == "__main__":

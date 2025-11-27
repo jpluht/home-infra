@@ -4,5 +4,11 @@ collections:
     version: ">=5.0.0"
   - name: community.general
     version: ">=7.0.0"
+  - name: cisco.ios
+    version: ">=4.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
   - name: ansibleguy.opnsense
+    type: git
     source: https://github.com/O-X-L/ansible-opnsense.git
+    version: main

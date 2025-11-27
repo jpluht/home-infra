@@ -1,20 +1,20 @@
 vlan_definitions:
   - id: 10
-    name: Rivendell
+    name: "{{ vault_vlan_10_name }}"
   - id: 20
-    name: Fellowship
+    name: "{{ vault_vlan_20_name }}"
   - id: 30
-    name: Shire
+    name: "{{ vault_vlan_30_name }}"
   - id: 40
-    name: Mordor
+    name: "{{ vault_vlan_40_name }}"
   - id: 50
-    name: Mirkwood
+    name: "{{ vault_vlan_50_name }}"
 
 trunk_ports:
   - GigabitEthernet1/0/2
   - GigabitEthernet1/0/3
 
-ap_access_ports:
+access_ports:
   - GigabitEthernet1/0/25
   - GigabitEthernet1/0/26
   - GigabitEthernet1/0/27

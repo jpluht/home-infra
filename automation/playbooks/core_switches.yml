@@ -1,5 +1,5 @@
 ---
-- name: Configure VLANs and Ports on Cisco 3750 TS Switches (Core)
+- name: Configure VLANs and Ports on Cisco 3750 Core Switches
   hosts: core_switches
   collections:
     - cisco.ios
@@ -22,20 +22,20 @@
         description: "Trunk port for uplink or firewall"
       loop: "{{ trunk_ports }}"
 
-    - name: Configure PowerEdge access ports (VLAN 10)
+    - name: Configure infrastructure access ports (VLAN 10)
       cisco.ios.ios_interfaces:
         name: "{{ item }}"
         mode: access
         access_vlan: 10
-        description: "Infra VLAN 10 access port"
+        description: "Infrastructure VLAN 10 access port"
       loop: "{{ poweredge_ports }}"
 
-    - name: Configure access ports for Rivendell VLAN 10
+    - name: Configure access ports for infrastructure VLAN 10
       cisco.ios.ios_interfaces:
         name: "{{ item }}"
         mode: access
         access_vlan: 10
-        description: "Infra VLAN 10 access port"
-      loop: "{{ access_ports.rivendell }}"
-      when: access_ports.rivendell | length > 0
+        description: "Infrastructure VLAN 10 access port"
+      loop: "{{ access_ports.infrastructure }}"
+      when: access_ports.infrastructure | length > 0
 

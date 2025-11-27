@@ -19,13 +19,13 @@
         name: "{{ item }}"
         mode: trunk
         trunk_vlans: "10,20,30,40,50"
-        description: "Trunk port for uplink to TS"
+        description: "Trunk port for uplink"
       loop: "{{ trunk_ports }}"
 
-    - name: Configure AP access ports (VLAN 10 Infra)
+    - name: Configure access ports (VLAN 10 Infrastructure)
       cisco.ios.ios_interfaces:
         name: "{{ item }}"
         mode: access
         access_vlan: 10
-        description: "AP access port VLAN 10 Infra (managed by CVWN)"
-      loop: "{{ ap_access_ports }}"
+        description: "Access port VLAN 10 Infrastructure"
+      loop: "{{ access_ports }}"

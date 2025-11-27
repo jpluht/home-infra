@@ -1,0 +1,25 @@
+---
+- name: Preview network vars from local vault-config
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Include local vault-config.yml
+      include_vars:
+        file: "{{ playbook_dir }}/../../.private/vault-config.yml"
+        name: vault
+
+    - name: Show VLAN summary
+      debug:
+        msg: "Loaded VLANs: {{ vault.vlans | map(attribute='id') | list }} (IDs) and names {{ vault.vlans | map(attribute='name') | list }}"
+
+    - name: Write vars dump to .private/generated/network_vars.json for inspection
+      copy:
+        dest: "{{ playbook_dir }}/../../.private/generated/network_vars.json"
+        content: "{{ vault | to_nice_json }}\n"
+        mode: '0600'
+
+    - name: Print sample device mapping
+      debug:
+        msg: "OPNsense IP: {{ vault.devices.opnsense_firewall.ip }} (VLAN {{ vault.devices.opnsense_firewall.vlan }})"
