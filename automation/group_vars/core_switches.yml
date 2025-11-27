@@ -1,31 +1,29 @@
-vlan_definitions:
-  - id: 10
-    name: "{{ vault_config.vlans.vlan_10.name }}"
-  - id: 20
-    name: "{{ vault_config.vlans.vlan_20.name }}"
-  - id: 30
-    name: "{{ vault_config.vlans.vlan_30.name }}"
-  - id: 40
-    name: "{{ vault_config.vlans.vlan_40.name }}"
-  - id: 41
-    name: "{{ vault_config.vlans.vlan_41.name }}"
-  - id: 50
-    name: "{{ vault_config.vlans.vlan_50.name }}"
+# Core switches VLAN and port configuration
+# Source of truth: .private/vault-config.yml (via include_vars in playbook)
 
+vlan_definitions: "{{ vault_config.vlans | dict2items | map(attribute='value') | list }}"
+
+# Trunk ports (uplinks to firewall, distribution, or other core switches)
 trunk_ports:
-  - GigabitEthernet1/0/1
-  - GigabitEthernet2/0/1
-  - GigabitEthernet1/0/2
-  - GigabitEthernet2/0/2
+  - GigabitEthernet1/0/1    # Uplink to OPNsense
+  - GigabitEthernet2/0/1    # Backup uplink
+  - GigabitEthernet1/0/2    # Inter-switch trunk
+  - GigabitEthernet2/0/2    # Backup inter-switch
 
-poweredge_ports:
-  - GigabitEthernet1/0/37
-
+# Access port mappings by VLAN (Cisco IOS)
+# These will be derived from vault_config in playbook via include_vars
+# Format: VLAN name -> list of physical ports
 access_ports:
   valinor:
-    - GigabitEthernet1/0/37
-  rivendell: []
-  bree: []
-  moria: []
-  barad-dur: []
-  mordor: []
+    - GigabitEthernet1/0/37      # Management PC
+  rivendell:
+    - GigabitEthernet1/0/10      # Personal device 1
+    - GigabitEthernet1/0/11      # Personal device 2
+  bree:
+    - GigabitEthernet1/0/20      # Entertainment VLAN
+  moria:
+    - GigabitEthernet1/0/30      # VM/Proxmox traffic
+  barad-dur:
+    - GigabitEthernet1/0/40      # Camera VLAN
+  mordor:
+    - GigabitEthernet1/0/50      # IoT isolated

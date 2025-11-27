@@ -1,41 +1,69 @@
 ---
-- name: Configure VLANs and Ports on Cisco 3750 Core Switches
-  hosts: core_switches
-  collections:
-    - cisco.ios
-  gather_facts: no
-  connection: network_cli
+# automation/playbooks/core_switches.yml
+# Cisco Switch VLAN & Port Automation Playbook
+# - Loads network config from .private/vault-config.yml
+# - Configures trunk ports, access ports, VLANs
+# - Idempotent and safe (use --check first)
 
+- name: "Cisco Switch Network Automation"
+  hosts: switches
+  gather_facts: false
+  
+  vars:
+    ansible_network_os: "cisco.ios.ios"
+    ansible_connection: "ansible.netcommon.network_cli"
+  
   tasks:
-    - name: Create VLANs on core switches
+    - name: "Load vault configuration"
+      include_vars:
+        file: "{{ playbook_dir }}/../../.private/vault-config.yml"
+        name: vault_config
+      tags:
+        - always
+    
+    - name: "Gather Cisco IOS facts"
+      cisco.ios.ios_facts:
+      tags:
+        - always
+    
+    - name: "Create VLANs"
       cisco.ios.ios_vlans:
-        vlan_id: "{{ item.id }}"
-        name: "{{ item.name }}"
-        state: present
-      loop: "{{ vlan_definitions }}"
-
-    - name: Configure trunk ports on core switches
-      cisco.ios.ios_interfaces:
-        name: "{{ item }}"
-        mode: trunk
-        trunk_vlans: "10,20,30,40,50"
-        description: "Trunk port for uplink or firewall"
-      loop: "{{ trunk_ports }}"
-
-    - name: Configure infrastructure access ports (VLAN 10)
-      cisco.ios.ios_interfaces:
-        name: "{{ item }}"
-        mode: access
-        access_vlan: 10
-        description: "Infrastructure VLAN 10 access port"
-      loop: "{{ poweredge_ports }}"
-
-    - name: Configure access ports for infrastructure VLAN 10
-      cisco.ios.ios_interfaces:
-        name: "{{ item }}"
-        mode: access
-        access_vlan: 10
-        description: "Infrastructure VLAN 10 access port"
-      loop: "{{ access_ports.infrastructure }}"
-      when: access_ports.infrastructure | length > 0
-
+        config:
+          - vlan_id: "{{ item.id }}"
+            name: "{{ item.name }}"
+            description: "{{ item.purpose }}"
+            state: "present"
+      loop: "{{ vault_config.vlans }}"
+      tags:
+        - vlans
+    
+    - name: "Configure trunk ports"
+      cisco.ios.ios_config:
+        lines:
+          - "switchport mode trunk"
+          - "switchport trunk allowed vlan {{ item.allowed_vlans | join(',') }}"
+          - "description {{ item.description }}"
+        parents: "interface {{ item.interface }}"
+      loop: "{{ vault_config.switch_config[inventory_hostname].trunk_ports | default([]) }}"
+      tags:
+        - ports
+    
+    - name: "Configure access ports"
+      cisco.ios.ios_config:
+        lines:
+          - "switchport mode access"
+          - "switchport access vlan {{ item.vlan }}"
+          - "description {{ item.description }}"
+        parents: "interface {{ item.interface }}"
+      loop: "{{ vault_config.switch_config[inventory_hostname].access_ports | default([]) }}"
+      tags:
+        - ports
+    
+    - name: "Configure management VLAN interface"
+      cisco.ios.ios_config:
+        lines:
+          - "ip address {{ vault_config.switch_config[inventory_hostname].management_ip }} 255.255.255.0"
+          - "no shutdown"
+        parents: "interface vlan {{ vault_config.switch_config[inventory_hostname].management_vlan }}"
+      tags:
+        - management

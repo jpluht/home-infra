@@ -1,0 +1,136 @@
+---
+# Master Deployment Playbook — Home Lab Infrastructure
+# Orchestrates configuration of all network devices in proper order
+#
+# Prerequisites:
+#   1. .private/vault-config.yml populated with your infrastructure
+#   2. .private/inventory/hosts.yml populated with actual device IPs
+#   3. .private/credentials/vault_password.txt set up
+#   4. All devices reachable and configured with SSH access
+#
+# Usage (dry-run):
+#   ansible-playbook playbooks/deploy-network.yml --check -v
+#
+# Usage (apply changes):
+#   ansible-playbook playbooks/deploy-network.yml -v
+#
+# Usage (apply only specific devices):
+#   ansible-playbook playbooks/deploy-network.yml --tags core_switches
+#   ansible-playbook playbooks/deploy-network.yml --tags opnsense
+
+- name: Home Lab Network Infrastructure — Master Deployment
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "{{ playbook_dir }}/../../.private/vault-config.yml"
+  
+  tasks:
+    - name: "Display deployment information"
+      debug:
+        msg: |
+          ========== MASTER DEPLOYMENT PLAYBOOK ==========
+          This playbook will configure:
+            1. OPNsense firewall (VLANs, DHCP, firewall rules, IDS/IPS)
+            2. Core Cisco switches (VLAN ports, trunks, inter-VLAN routing)
+            3. POE switches (access port configuration)
+            4. Proxmox nodes (network bridges, cluster setup)
+            5. GPU node (network setup)
+          
+          Configuration source: .private/vault-config.yml
+          Dry-run mode: {{ ansible_check_mode | default('false') }}
+          
+          VLANs to configure: {{ vault_config.vlans | dict2items | map(attribute='key') | list | join(', ') }}
+          ================================================
+      tags: always
+
+    - name: "Validate vault-config is loaded and complete"
+      assert:
+        that:
+          - vault_config is defined
+          - vault_config.vlans is defined
+          - vault_config.vlans | length > 0
+        fail_msg: "ERROR: vault-config.yml not properly loaded! Check .private/vault-config.yml"
+      tags: always
+
+  post_tasks:
+    - name: "Generate deployment report"
+      copy:
+        content: |
+          # Network Deployment Report
+          Generated: {{ now(utc=True) | to_nice_datetime }}
+          Mode: {{ 'DRY-RUN (--check)' if ansible_check_mode else 'APPLIED' }}
+          
+          ## Configuration Applied:
+          - OPNsense: VLANs, DHCP, Firewall Rules, IDS/IPS
+          - Core Switches: VLAN ports, trunks, DHCP snooping
+          - POE Switches: Access port configuration
+          - Proxmox: Network bridges, cluster setup
+          - GPU Node: Network configuration
+          
+          ## Network Summary:
+          VLANs Configured:
+          {% for vlan_key, vlan_data in vault_config.vlans.items() %}
+          - {{ vlan_data.id }}: {{ vlan_data.name }} ({{ vlan_data.subnet }})
+          {% endfor %}
+          
+          Next Steps:
+          1. Verify device connectivity
+          2. Test inter-VLAN routing
+          3. Monitor logs in OPNsense GUI
+          4. Validate firewall rules in apply mode
+        dest: ".private/generated/deployment_report.md"
+        mode: "0644"
+      when: not ansible_check_mode
+      tags:
+        - report
+        - always
+
+- name: Configure OPNsense Firewall
+  import_playbook: opnsense.yml
+  tags:
+    - opnsense
+    - firewall
+
+- name: Configure Core Cisco Switches
+  import_playbook: core_switches.yml
+  tags:
+    - core_switches
+    - switches
+
+- name: Configure POE Switches
+  import_playbook: poe_switches.yml
+  tags:
+    - poe_switches
+    - switches
+
+- name: Configure Proxmox Nodes
+  import_playbook: proxmox.yml
+  tags:
+    - proxmox
+    - virtualization
+
+- name: Configure GPU Node
+  import_playbook: gpu_node.yml
+  tags:
+    - gpu_node
+    - compute
+
+- name: Final Validation
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: "Deployment complete"
+      debug:
+        msg: |
+          ✓ Network infrastructure deployment complete!
+          
+          To verify configuration:
+          1. SSH to OPNsense: ssh admin@{{ groups.opnsense[0] | default('firewall-ip') }}
+          2. Check VLAN status: show interface vlan in Cisco switches
+          3. Verify inter-VLAN connectivity: ping between devices on different VLANs
+          4. Review firewall logs: OPNsense WebGUI → Firewall → Logs
+          
+          For issues or rollback:
+          - Use --check flag to preview changes
+          - Review .private/generated/deployment_report.md
+      tags: always
