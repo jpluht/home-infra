@@ -1,48 +1,107 @@
 ---
-- name: Configure GPU Nodes for LLM Models and iSCSI Hard Drives
-  hosts: gpu_node
+- name: "Configure GPU Nodes for LLM Models and iSCSI Storage"
+  hosts: gpu_nodes
   become: yes
   gather_facts: yes
+  tags: ["setup", "compute", "gpu"]
+
   collections:
     - ansible.posix
     - community.general
 
   vars:
-    iscsi_target_ip: "{{ gpu_node_vars.iscsi_target_ip | default('10.0.1.20') }}"
-    iscsi_target_iqn: "{{ gpu_node_vars.iscsi_target_iqn | default('iqn.2024-01.local.cluster:target') }}"
     llm_models_dir: "/opt/llm_models"
     python_version: "3.10"
+    debug_output_dir: "/tmp/ansible_gpu_debug"
+
+  pre_tasks:
+    - name: "Load vault configuration"
+      include_vars:
+        file: "{{ playbook_dir }}/../.private/vault-config.yml"
+        name: vault_config
+      tags: ["always"]
+
+    - name: "Display GPU node configuration (preview mode)"
+      debug:
+        msg: |
+          GPU Node Setup Preview:
+          - Node: {{ inventory_hostname }}
+          - iSCSI Target IP: {{ vault_config.storage.iscsi_target_ip | default('Not defined') }}
+          - iSCSI Target IQN: {{ vault_config.storage.iscsi_target_iqn | default('Not defined') }}
+          - LLM Models Dir: {{ llm_models_dir }}
+          - Python Version: {{ python_version }}
+      tags: ["preview", "summary"]
 
   tasks:
-    - name: Update package cache
+    - name: "Update package cache"
       apt:
         update_cache: yes
+        cache_valid_time: 3600
+      tags: ["packages"]
       when: ansible_os_family in ['Debian', 'Ubuntu']
 
-    - name: Install essential packages
+    - name: "Install essential system packages"
       apt:
         name:
           - python{{ python_version }}
           - python{{ python_version }}-pip
           - python{{ python_version }}-venv
+          - python{{ python_version }}-dev
           - git
           - curl
           - wget
           - open-iscsi
           - multipath-tools
+          - build-essential
+          - libssl-dev
         state: present
+      tags: ["packages"]
       when: ansible_os_family in ['Debian', 'Ubuntu']
 
-    - name: Install NVIDIA drivers and CUDA (if GPU present)
-      apt:
-        name:
-          - nvidia-driver-470
-          - nvidia-cuda-toolkit
-        state: present
-      ignore_errors: yes
-      when: ansible_os_family in ['Debian', 'Ubuntu']
+    - name: "Check for NVIDIA GPU"
+      shell: "lspci | grep -i nvidia | wc -l"
+      register: nvidia_check
+      changed_when: false
+      tags: ["gpu", "drivers"]
 
-    - name: Install Python packages for LLM
+    - name: "Install NVIDIA drivers and CUDA (if GPU detected)"
+      block:
+        - name: "Add NVIDIA CUDA repository"
+          apt_repository:
+            repo: "ppa:graphics-drivers/ppa"
+            state: present
+          tags: ["gpu", "drivers"]
+
+        - name: "Install NVIDIA driver"
+          apt:
+            name:
+              - nvidia-driver-535
+              - nvidia-utils
+            state: present
+          tags: ["gpu", "drivers"]
+
+        - name: "Install NVIDIA CUDA toolkit"
+          apt:
+            name:
+              - nvidia-cuda-toolkit
+            state: present
+          ignore_errors: yes
+          tags: ["gpu", "drivers"]
+
+        - name: "Verify CUDA installation"
+          command: "nvidia-smi"
+          register: cuda_verify
+          changed_when: false
+          tags: ["gpu", "drivers"]
+
+        - name: "Display CUDA info"
+          debug:
+            var: cuda_verify.stdout_lines
+          tags: ["gpu", "drivers", "summary"]
+      when: nvidia_check.stdout | int > 0
+      tags: ["gpu", "drivers"]
+
+    - name: "Install Python ML/LLM packages"
       pip:
         name:
           - torch
@@ -52,67 +111,141 @@
           - accelerate
           - datasets
           - huggingface_hub
-        executable: pip3
-
-    - name: Create directory for LLM models
-      file:
-        path: "{{ llm_models_dir }}"
-        state: directory
-        mode: '0755'
-
-    - name: Configure iSCSI initiator
-      lineinfile:
-        path: /etc/iscsi/iscsid.conf
-        regexp: '^node.session.auth.authmethod = '
-        line: 'node.session.auth.authmethod = CHAP'
-      notify: restart iscsi
-
-    - name: Discover iSCSI targets
-      command: iscsiadm -m discovery -t sendtargets -p {{ iscsi_target_ip }}
-      register: discovery_output
+          - safetensors
+          - peft
+        state: present
+        executable: "pip{{ python_version }}"
+        extra_args: "--upgrade"
+      tags: ["packages", "python", "llm"]
       ignore_errors: yes
 
-    - name: Login to iSCSI target
-      command: iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --login
-      when: discovery_output.rc == 0
-      ignore_errors: yes
-
-    - name: Ensure multipath is configured
-      service:
-        name: multipathd
-        state: started
-        enabled: yes
-
-    - name: Create LLM models directory structure
+    - name: "Create LLM models directory structure"
       file:
         path: "{{ llm_models_dir }}/{{ item }}"
         state: directory
         mode: '0755'
+        owner: root
+        group: root
       loop:
         - cache
         - models
         - scripts
+        - logs
+      tags: ["directories", "llm"]
 
-    - name: Set up basic LLM inference script
+    - name: "Configure iSCSI initiator (CHAP auth)"
+      lineinfile:
+        path: /etc/iscsi/iscsid.conf
+        regexp: '^node.session.auth.authmethod = '
+        line: 'node.session.auth.authmethod = CHAP'
+        create: no
+      tags: ["iscsi", "storage"]
+      notify: "restart iscsid"
+      when: vault_config.storage is defined
+
+    - name: "Discover iSCSI targets"
+      shell: |
+        iscsiadm -m discovery -t sendtargets -p {{ vault_config.storage.iscsi_target_ip }}
+      register: iscsi_discovery
+      changed_when: false
+      failed_when: false
+      tags: ["iscsi", "storage"]
+      when: vault_config.storage is defined
+
+    - name: "Display iSCSI discovery results"
+      debug:
+        msg: "{{ iscsi_discovery.stdout_lines }}"
+      tags: ["iscsi", "storage", "summary"]
+      when: iscsi_discovery.rc == 0
+
+    - name: "Login to iSCSI targets"
+      shell: |
+        iscsiadm -m node -T {{ vault_config.storage.iscsi_target_iqn }} \
+          -p {{ vault_config.storage.iscsi_target_ip }} --login
+      changed_when: false
+      failed_when: false
+      tags: ["iscsi", "storage"]
+      when: vault_config.storage is defined
+
+    - name: "Ensure multipath daemon is running"
+      systemd:
+        name: multipathd
+        state: started
+        enabled: yes
+      tags: ["iscsi", "storage"]
+
+    - name: "Deploy LLM inference script"
       copy:
         dest: "{{ llm_models_dir }}/scripts/inference.py"
+        mode: '0755'
+        owner: root
+        group: root
         content: |
           #!/usr/bin/env python3
-          from transformers import pipeline
+          """
+          Simple LLM inference script for GPU node.
+          Supports GPU acceleration via CUDA if available.
+          """
           import torch
+          from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
+          import logging
+          import sys
+
+          logging.basicConfig(level=logging.INFO)
+          logger = logging.getLogger(__name__)
 
           def main():
               device = 0 if torch.cuda.is_available() else -1
-              classifier = pipeline("sentiment-analysis", device=device)
-              result = classifier("Test input")
-              print(result)
+              logger.info(f"Using device: {device} (GPU)" if device >= 0 else f"Using device: CPU")
+
+              try:
+                  # Example: Sentiment analysis pipeline
+                  classifier = pipeline("sentiment-analysis", device=device)
+                  result = classifier("This is an amazing test!")
+                  logger.info(f"Result: {result}")
+              except Exception as e:
+                  logger.error(f"Error running inference: {e}", exc_info=True)
+                  sys.exit(1)
 
           if __name__ == "__main__":
               main()
+      tags: ["llm", "scripts"]
+
+    - name: "Create debug output directory"
+      file:
+        path: "{{ debug_output_dir }}"
+        state: directory
         mode: '0755'
+      tags: ["debug"]
+
+    - name: "Export GPU node configuration for review"
+      copy:
+        dest: "{{ debug_output_dir }}/gpu_node_config.json"
+        content: |
+          {
+            "node": "{{ inventory_hostname }}",
+            "llm_models_dir": "{{ llm_models_dir }}",
+            "cuda_available": {{ nvidia_check.stdout | int > 0 | string | lower }},
+            "iscsi_configured": {% if vault_config.storage is defined %}true{% else %}false{% endif %},
+            "python_version": "{{ python_version }}"
+          }
+      tags: ["debug", "export"]
 
   handlers:
-    - name: restart iscsi
-      service:
+    - name: "restart iscsid"
+      systemd:
         name: iscsid
         state: restarted
+        daemon_reload: yes
+
+  post_tasks:
+    - name: "Display summary"
+      debug:
+        msg: |
+          ===== GPU Node Configuration Complete =====
+          Node: {{ inventory_hostname }}
+          CUDA Available: {{ nvidia_check.stdout | int > 0 }}
+          LLM Directory: {{ llm_models_dir }}
+          Debug Export: {{ debug_output_dir }}/gpu_node_config.json
+          =============================================
+      tags: ["summary"]
