@@ -1,29 +1,77 @@
-vlan_definitions:
-  - id: 10
-    name: "{{ vault_vlan_10_name }}"
-  - id: 20
-    name: "{{ vault_vlan_20_name }}"
-  - id: 30
-    name: "{{ vault_vlan_30_name }}"
-  - id: 40
-    name: "{{ vault_vlan_40_name }}"
-  - id: 50
-    name: "{{ vault_vlan_50_name }}"
+---
+# Group variables for Cisco PoE switches
+# 
+# VLAN definitions and port mappings are loaded dynamically from vault-config.yml
+# at playbook runtime (see automation/playbooks/poe_switches.yml)
 
-trunk_ports:
-  - GigabitEthernet1/0/2
-  - GigabitEthernet1/0/3
+# ====================================================================
+# Cisco IOS Connection Defaults (same as core_switches)
+# ====================================================================
+ansible_connection: network_cli
+ansible_network_os: cisco.ios.ios
+ansible_become: yes
+ansible_become_method: enable
 
-access_ports:
-  - GigabitEthernet1/0/25
-  - GigabitEthernet1/0/26
-  - GigabitEthernet1/0/27
-  - GigabitEthernet1/0/28
-  - GigabitEthernet1/0/29
-  - GigabitEthernet1/0/30
-  - GigabitEthernet1/0/31
-  - GigabitEthernet1/0/32
-  - GigabitEthernet1/0/33
-  - GigabitEthernet1/0/34
-  - GigabitEthernet1/0/35
-  - GigabitEthernet1/0/36
+# ====================================================================
+# PoE Power Configuration
+# ====================================================================
+# PoE power budget is typically 370W (Catalyst 3750 PoE)
+# Can be overridden per-device in inventory
+
+poe_power_budget_watts: 370
+poe_enable_backoff: yes
+poe_backoff_delay: 100  # ms
+
+# ====================================================================
+# Access Port Defaults for PoE Devices
+# ====================================================================
+# Typical connected devices: IP cameras, wireless APs, VoIP phones
+# These inherit access port configuration from vault-config
+
+poe_device_class: "high-power"  # 30W max per port
+poe_port_priority: "high"
+
+# ====================================================================
+# VLAN Trunk Configuration
+# ====================================================================
+# PoE switches typically trunk to core switches and OPNsense
+
+trunk_ports_default:
+  - "GigabitEthernet0/1"      # Trunk to core switch
+  - "GigabitEthernet0/2"      # Backup trunk
+
+# ====================================================================
+# Port Security
+# ====================================================================
+port_security_enabled: yes
+port_security_violation: "restrict"     # Use "restrict" for PoE to avoid power issues
+port_security_max_addresses: 5
+port_security_aging_time: 2  # minutes
+
+# ====================================================================
+# Spanning Tree
+# ====================================================================
+spanning_tree_mode: "pvst"
+spanning_tree_bpdufilter_default: yes
+
+# ====================================================================
+# DHCP Snooping
+# ====================================================================
+dhcp_snooping_enabled: yes
+dhcp_snooping_trust_ports:
+  - "GigabitEthernet0/1"      # Trust uplinks
+  - "GigabitEthernet0/2"
+
+# ====================================================================
+# Interface Speed & Duplex
+# ====================================================================
+interface_speed: "auto"
+interface_duplex: "auto"
+
+# ====================================================================
+# Storm Control (prevent broadcast storms)
+# ====================================================================
+storm_control_enabled: yes
+storm_control_broadcast_level: 15  # percent
+storm_control_multicast_level: 15
+storm_control_unicast_level: 15

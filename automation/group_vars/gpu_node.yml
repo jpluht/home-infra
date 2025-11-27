@@ -1,13 +1,81 @@
-gpu_nodes:
-  hosts:
-    gpu_node_1:
-      ip: 10.0.4.10
-    gpu_node_2:
-      ip: 10.0.4.11
+---
+# Group variables for GPU compute nodes
+# 
+# iSCSI and network configuration is loaded from .private/vault-config.yml
+# at playbook runtime via include_vars (see automation/playbooks/gpu_node.yml)
 
-# GPU node shared variables
-gpu_node_vars:
-  iscsi_target_ip: 10.0.1.20
-  iscsi_target_iqn: iqn.2024-01.local.cluster:target
-  llm_models_dir: /opt/llm_models
-  python_version: "3.10"
+# ====================================================================
+# GPU Node SSH Connection Defaults
+# ====================================================================
+ansible_connection: ssh
+ansible_user: admin
+ansible_become: yes
+ansible_become_method: sudo
+
+# ====================================================================
+# CUDA/GPU Configuration
+# ====================================================================
+cuda_version: "12.2"
+cuda_install_path: "/usr/local/cuda"
+nvidia_driver_version: "535"
+
+# ====================================================================
+# LLM Model Storage
+# ====================================================================
+llm_models_dir: "/opt/llm_models"
+llm_cache_dir: "/opt/llm_models/cache"
+llm_models_subdir: "/opt/llm_models/models"
+llm_scripts_dir: "/opt/llm_models/scripts"
+llm_logs_dir: "/opt/llm_models/logs"
+
+# ====================================================================
+# iSCSI Storage Configuration (loaded from vault-config.storage)
+# ====================================================================
+# Vault config provides:
+#   iscsi_target_ip: "192.168.20.40"
+#   iscsi_target_iqn: "iqn.2024-01.local.cluster:target01"
+#   iscsi_username: "gpu-node"
+#   iscsi_password: "***"
+
+iscsi_port: 3260
+iscsi_protocol: "iscsi"
+
+# ====================================================================
+# Python Configuration
+# ====================================================================
+python_version: "3.10"
+python_venv_dir: "/opt/venv_llm"
+
+# ====================================================================
+# ML/LLM Framework Versions
+# ====================================================================
+torch_version: "2.1.0"
+transformers_version: "4.35.0"
+huggingface_hub_version: "0.17.0"
+
+# ====================================================================
+# Multipath Configuration (for redundant iSCSI connections)
+# ====================================================================
+multipath_enabled: yes
+multipath_config_refresh: yes
+
+# ====================================================================
+# System Resource Limits
+# ====================================================================
+# Allow high memory usage for LLM inference
+system_max_map_count: 262144
+ulimit_memlock: "unlimited"
+ulimit_nofile: 65536
+
+# ====================================================================
+# Monitoring & Logging
+# ====================================================================
+syslog_enabled: yes
+gpu_metrics_logging: yes
+inference_log_dir: "/opt/llm_models/logs"
+
+# ====================================================================
+# Network Configuration (from vault-config.vlans)
+# ====================================================================
+# GPU node typically on VLAN 20 (Rivendell - infrastructure)
+# Network setup via network-cli at deployment time

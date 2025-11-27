@@ -1,0 +1,90 @@
+---
+# Group variables for OPNsense firewall
+# These are device-specific settings that apply to all OPNsense hosts
+# 
+# IMPORTANT: Sensitive data (credentials, API keys) should be in:
+#   .private/inventory/hosts.yml or vault-encrypted files
+# 
+# This file contains only non-sensitive configuration defaults
+
+# ====================================================================
+# OPNsense API Configuration
+# ====================================================================
+opnsense_api_timeout: 300
+opnsense_api_retries: 3
+opnsense_validate_certs: no
+
+# ====================================================================
+# VLAN Configuration Defaults (loaded from vault-config at runtime)
+# ====================================================================
+# Playbooks load vault_config.vlans dynamically via include_vars
+# Each VLAN includes: id, name, subnet, gateway, dhcp_enabled, access_level
+
+# Example structure (populated by vault-config.yml):
+# vlans:
+#   - id: 10
+#     name: "Valinor"
+#     subnet: "192.168.10.0/24"
+#     gateway: "192.168.10.1"
+#     dhcp_enabled: false
+#   - id: 20
+#     name: "Rivendell"
+#     subnet: "192.168.20.0/24"
+#     gateway: "192.168.20.1"
+#     dhcp_enabled: true
+
+# ====================================================================
+# DHCP Configuration Defaults
+# ====================================================================
+dhcp_lease_time: 3600  # seconds
+dhcp_renewal_time: 1800
+dhcp_rebinding_time: 3150
+
+# ====================================================================
+# DNS Configuration Defaults
+# ====================================================================
+dns_resolvers:
+  - "1.1.1.1"        # Cloudflare
+  - "1.0.0.1"        # Cloudflare secondary
+  
+dns_local_domain: "lab.local"
+
+# ====================================================================
+# Firewall Rules Configuration
+# ====================================================================
+# Default firewall posture: DENY all, ALLOW explicitly
+# Specific rules loaded from vault-config.firewall_rules
+
+firewall_default_policy: "drop"
+firewall_log_all_drops: yes
+
+# ====================================================================
+# IDS/IPS Configuration (Suricata)
+# ====================================================================
+suricata_enabled: yes
+suricata_eve_log: yes
+suricata_home_net: "[192.168.0.0/16]"
+
+# ====================================================================
+# NTP Configuration
+# ====================================================================
+ntp_enabled: yes
+ntp_servers:
+  - "0.openbsd.pool.ntp.org"
+  - "1.openbsd.pool.ntp.org"
+  - "2.openbsd.pool.ntp.org"
+  - "3.openbsd.pool.ntp.org"
+
+# ====================================================================
+# High Availability (if configured)
+# ====================================================================
+ha_enabled: no
+# ha_virtual_ip: "192.168.10.254"
+# ha_sync_interface: "em0"
+
+# ====================================================================
+# Backup & Restore
+# ====================================================================
+backup_enabled: yes
+backup_location: "/var/backups/opnsense"
+backup_retention_days: 30
