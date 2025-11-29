@@ -1,0 +1,19 @@
+{% for rule in firewall_rules.rules | sort(attribute='priority') %}
+<rule>
+    <interface>{{ rule.interface | default('wan') }}</interface>
+    <direction>{{ rule.direction | default('in') }}</direction>
+    <action>{{ rule.action | default('pass') }}</action>
+    <protocol>{{ rule.protocol | default('tcp') }}</protocol>
+    <source>
+        <network>{{ rule.source_vlan | default('any') }}</network>
+    </source>
+    <destination>
+        <network>{{ rule.destination_vlan | default('any') }}</network>
+        {% if rule.destination_port is defined %}
+        <port>{{ rule.destination_port }}</port>
+        {% endif %}
+    </destination>
+    <descr>{{ rule.name }}</descr>
+    <log>{{ rule.log | default('no') }}</log>
+</rule>
+{% endfor %}
