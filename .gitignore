@@ -57,6 +57,10 @@ inventory/hosts
 *.tmp
 *.log
 
+# Archived/deprecated files
+old/
+old/**
+
 # IDE-tiedostot
 .vscode/
 .idea/
