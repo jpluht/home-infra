@@ -1,7 +1,7 @@
 ---
 # automation/playbooks/opnsense.yml
 #
-# Modern OPNsense Automation Playbook
+# Modern OPNsense Automation Playbook using oxlorg.opnsense collection
 # - Loads network config from .private/vault-config.yml
 # - Configures VLANs, DHCP, DNS, firewall rules via REST API
 # - Idempotent and safe (use --check first)
@@ -20,28 +20,28 @@
 #   # Full deployment:
 #   ansible-playbook playbooks/opnsense.yml
 
-- name: "OPNsense Network Automation"
+- name: "OPNsense Network Automation using oxlorg.opnsense"
   hosts: opnsense
   gather_facts: false
-  vars_files:
-    - "../../.private/vault-config.yml"
-  
+  collections:
+    - oxlorg.opnsense
+
   vars:
-    ansible_network_os: "community.general.opnsense"
-    ansible_connection: "ansible.netcommon.network_cli"
-  
+    ansible_network_os: "oxlorg.opnsense.opnsense"
+    ansible_connection: "ansible.netcommon.httpapi"
+
   tasks:
     # ========================================================================
     # VLAN Configuration
     # ========================================================================
-    
+
     - name: "Load vault configuration"
       include_vars:
         file: "{{ playbook_dir }}/../../.private/vault-config.yml"
         name: vault_config
       tags:
         - always
-    
+
     - name: "Display loaded VLANs (preview)"
       debug:
         msg: |
@@ -52,63 +52,54 @@
       tags:
         - vlans
         - always
-    
-    # Note: Actual OPNsense VLAN creation requires:
-    # 1. REST API authentication (api_key + api_secret)
-    # 2. OPNsense community.general.opnsense module or custom REST calls
-    # 3. Port mapping via pfctl or REST API
-    #
-    # For now, this playbook serves as a template/framework
-    # Actual REST API implementation depends on OPNsense version and available modules
-    
-    - name: "Create or update VLANs (via REST API)"
-      debug:
-        msg: |
-          VLAN Configuration Ready ({{ item.name }}):
-          - ID: {{ item.id }}
-          - Subnet: {{ item.subnet }}
-          - Gateway: {{ item.gateway }}
-          - DHCP: {{ item.dhcp_enabled }}
+
+    - name: "Configure VLANs on OPNsense"
+      oxlorg.opnsense.vlan:
+        interface: "igb{{ loop.index }}"
+        vlan: "{{ item.id }}"
+        description: "{{ item.name }}"
+        state: present
       loop: "{{ vault_config.vlans }}"
       tags:
         - vlans
-    
+
     # ========================================================================
     # DHCP Configuration
     # ========================================================================
-    
+
     - name: "Configure DHCP pools"
-      debug:
-        msg: |
-          DHCP Configuration for {{ item.key }}:
-          - Enabled: {{ item.value.enabled }}
-          {% if item.value.enabled %}
-          - Pool: {{ item.value.pool_start }} - {{ item.value.pool_end }}
-          - Lease Time: {{ item.value.lease_time }}s
-          {% endif %}
+      oxlorg.opnsense.dhcp:
+        interface: "opt{{ loop.index }}"
+        range_from: "{{ item.value.range_start }}"
+        range_to: "{{ item.value.range_end }}"
+        domain: "{{ vault_config.dns.global.domain }}"
+        nameservers:
+          - "{{ vault_config.dns.global.primary_resolver }}"
+          - "{{ vault_config.dns.global.secondary_resolver }}"
+        state: present
       loop: "{{ vault_config.dhcp.per_vlan | dict2items }}"
+      when: item.value.enabled
       tags:
         - dhcp
-    
+
     # ========================================================================
     # DNS Configuration
     # ========================================================================
-    
+
     - name: "Configure DNS"
-      debug:
-        msg: |
-          DNS Configuration:
-          - Domain: {{ vault_config.dns.global.domain }}
-          - Primary Resolver: {{ vault_config.dns.global.primary_resolver }}
-          - Upstream DNS: {{ vault_config.dns.global.upstream_dns | join(', ') }}
-          - Local Records: {{ vault_config.dns.local_records | length }}
+      oxlorg.opnsense.dns:
+        domain: "{{ vault_config.dns.global.domain }}"
+        nameservers:
+          - "{{ vault_config.dns.global.primary_resolver }}"
+          - "{{ vault_config.dns.global.secondary_resolver }}"
+        state: present
       tags:
         - dns
-    
+
     # ========================================================================
     # Firewall Rules Configuration
     # ========================================================================
-    
+
     - name: "Display firewall rules (preview)"
       debug:
         msg: |
@@ -118,22 +109,83 @@
           - Priorities: {{ vault_config.firewall_rules.rules | map(attribute='priority') | unique | sort | list }}
       tags:
         - firewall
-    
+
     - name: "Configure firewall rules"
-      debug:
-        msg: |
-          Rule {{ item.priority }}: {{ item.name }}
-          - From: {{ item.from_vlan }}
-          - To: {{ item.to_vlan }}
-          - Action: {{ item.action }}
+      oxlorg.opnsense.rule:
+        interface: "{{ item.interface }}"
+        direction: "{{ item.direction }}"
+        action: "{{ item.action }}"
+        protocol: "{{ item.protocol }}"
+        source: "{{ item.source }}"
+        destination: "{{ item.destination }}"
+        description: "{{ item.name }}"
+        state: present
       loop: "{{ vault_config.firewall_rules.rules | sort(attribute='priority') }}"
       tags:
         - firewall
-    
+
+    # ========================================================================
+    # NAT Configuration
+    # ========================================================================
+
+    - name: "Configure NAT rules"
+      oxlorg.opnsense.nat:
+        interface: "{{ item.interface }}"
+        external_port: "{{ item.external_port }}"
+        protocol: "{{ item.protocol }}"
+        target: "{{ item.target }}"
+        local_port: "{{ item.local_port }}"
+        description: "{{ item.description }}"
+        state: present
+      loop: "{{ vault_config.nat.rules }}"
+      when: vault_config.nat.rules is defined
+      tags:
+        - nat
+
+    # ========================================================================
+    # IDS/IPS Configuration (Suricata)
+    # ========================================================================
+
+    - name: "Configure Suricata IDS/IPS"
+      oxlorg.opnsense.suricata:
+        enabled: "{{ vault_config.suricata.enabled }}"
+        interfaces:
+          - wan
+        rulesets:
+          - "ET open"
+          - "ET Pro"
+        state: present
+      tags:
+        - ids_ips
+
+    # ========================================================================
+    # NTP Configuration
+    # ========================================================================
+
+    - name: "Configure NTP servers"
+      oxlorg.opnsense.ntp:
+        servers: "{{ vault_config.ntp.servers }}"
+        state: present
+      tags:
+        - ntp
+
+    # ========================================================================
+    # DNS Blocklist Configuration
+    # ========================================================================
+
+    - name: "Configure DNS blocklist"
+      oxlorg.opnsense.dnsbl:
+        enabled: "{{ vault_config.dnsbl.enabled }}"
+        blocklists: "{{ vault_config.dnsbl.blocklists }}"
+        state: present
+      when: vault_config.dnsbl.enabled
+      tags:
+        - dnsbl
+
     # ========================================================================
     # Validation & Export
     # ========================================================================
-    
+
     - name: "Export loaded configuration to .private/generated/ (preview mode)"
       copy:
         content: "{{ vault_config | to_nice_yaml }}"
@@ -142,7 +194,7 @@
       tags:
         - export
       when: false  # Enable this when you want to export the config for review
-    
+
     - name: "Summary: Configuration ready for deployment"
       debug:
         msg: |
@@ -153,21 +205,25 @@
           Firewall rules to deploy: {{ vault_config.firewall_rules.rules | length }}
           DHCP scopes: {{ vault_config.dhcp.per_vlan | dict2items | selectattr('value.enabled') | list | length }}
           DNS local records: {{ vault_config.dns.local_records | length }}
-          
+
           Next steps:
           1. Run with --check to see all changes
           2. Verify firewall rules are correct
           3. Run without --check to deploy
-          
-          IMPORTANT: This is a preview playbook
-          Actual REST API modules need to be configured
+
+          IMPORTANT: This playbook uses oxlorg.opnsense collection
       tags:
         - summary
-  
+
   handlers:
     - name: "Restart OPNsense services"
-      debug:
-        msg: "Service restart would happen here (service reload via REST API)"
+      oxlorg.opnsense.service:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - dhcpd
+        - dnsmasq
+        - suricata
       listen: "opnsense_changed"
 
 # ============================================================================
@@ -184,13 +240,18 @@
 # - dhcp        : DHCP configuration only
 # - dns         : DNS configuration only
 # - firewall    : Firewall rules only
+# - nat         : NAT rules only
+# - ids_ips     : IDS/IPS configuration only
+# - ntp         : NTP configuration only
+# - dnsbl       : DNS blocklist configuration only
 # - export      : Export config for review (debugging)
 # - summary     : Show configuration summary
 #
-# The actual REST API implementation depends on:
-# - OPNsense version (19.x, 20.x, 21.x+)
-# - Available Python modules (community.general.opnsense, etc.)
-# - REST API documentation
+# The oxlorg.opnsense collection provides:
+# - Native OPNsense REST API integration
+# - Idempotent operations
+# - Comprehensive module coverage
+# - Proper error handling
 #
-# Current status: Framework/Template (documentation structure in place)
-# Next: Implement actual REST API calls or use OPNsense PHP RPC interface
+# Current status: Updated to use oxlorg.opnsense collection
+# Next: Test with actual OPNsense instance

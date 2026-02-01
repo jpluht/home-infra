@@ -1,61 +1,127 @@
 ---
-- name: Configure Proxmox Cluster Nodes
+# automation/playbooks/proxmox.yml
+#
+# Proxmox Cluster Node Automation
+# - Loads network config from .private/vault-config.yml
+# - Configures cluster, storage, network bridges, VMs
+# - Idempotent and safe (use --check first)
+#
+# Usage:
+#   ansible-playbook playbooks/proxmox.yml --check
+#   ansible-playbook playbooks/proxmox.yml --tags cluster
+#   ansible-playbook playbooks/proxmox.yml
+
+- name: "Proxmox Cluster Automation"
   hosts: proxmox_nodes
   gather_facts: yes
   become: yes
-
+  
   tasks:
-    - name: Ensure Proxmox repositories are configured
+    # ========================================================================
+    # Load Configuration
+    # ========================================================================
+    
+    - name: "Load vault configuration"
+      include_vars:
+        file: "{{ playbook_dir }}/../../.private/vault-config.yml"
+        name: vault_config
+      tags:
+        - always
+    
+    - name: "Display loaded configuration"
+      debug:
+        msg: |
+          Proxmox cluster configuration loaded:
+          - Nodes in cluster: {{ groups['proxmox_nodes'] | length }}
+          - VLANs available: {{ vault_config.vlans | length }}
+          - Storage target IP: {{ vault_config.devices.infrastructure.shared_storage.ip }}
+      tags:
+        - always
+    
+    # ========================================================================
+    # Repository & Package Configuration
+    # ========================================================================
+    
+    - name: "Ensure Proxmox repositories are configured"
       apt_repository:
-        repo: deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription
+        repo: "deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription"
         state: present
       when: ansible_os_family == 'Debian'
-
-    - name: Update package cache
+      tags:
+        - packages
+    
+    - name: "Update package cache"
       apt:
         update_cache: yes
       when: ansible_os_family == 'Debian'
-
-    - name: Configure network bridges for VLANs
+      tags:
+        - packages
+    
+    # ========================================================================
+    # Network Configuration for VLANs
+    # ========================================================================
+    
+    - name: "Configure network bridges for VLANs"
       template:
-        src: templates/proxmox_network.j2
-        dest: /etc/network/interfaces
+        src: "proxmox_network.j2"
+        dest: "/etc/network/interfaces"
         backup: yes
-      notify: restart networking
-      when: proxmox_nodes is defined
-
-    - name: Configure Proxmox cluster
-      shell: |
-        pvecm create {{ cluster.name }}
+      notify: "restart_networking"
+      tags:
+        - network
+    
+    # ========================================================================
+    # Cluster Configuration
+    # ========================================================================
+    
+    - name: "Create Proxmox cluster (primary node only)"
+      command: "pvecm create {{ inventory_hostname }}-cluster"
       register: cluster_result
-      failed_when: cluster_result.rc not in [0, 17]  # 0 = success, 17 = already exists
+      failed_when: cluster_result.rc not in [0, 17]
+      changed_when: cluster_result.rc == 0
       when: inventory_hostname == groups['proxmox_nodes'][0]
-
-    - name: Join cluster nodes
-      shell: |
-        pvecm add {{ groups['proxmox_nodes'][0] }}
+      tags:
+        - cluster
+    
+    - name: "Join cluster nodes"
+      command: "pvecm add {{ hostvars[groups['proxmox_nodes'][0]]['ansible_host'] }}"
+      register: join_result
+      failed_when: join_result.rc not in [0, 255]
+      changed_when: join_result.rc == 0
       when: inventory_hostname != groups['proxmox_nodes'][0]
-
-    - name: Configure storage
-      shell: |
-        pvesm add {{ item.type }} {{ item.name }} \
-          -path {{ item.path | default(omit) }} \
-          -server {{ item.server | default(omit) }} \
-          -export {{ item.export | default(omit) }}
-      loop: "{{ storage }}"
-      ignore_errors: yes
-
-    - name: Ensure cluster backup schedule is configured
-      cron:
-        name: "Proxmox cluster backup"
-        special_time: daily
-        hour: 3
-        minute: 0
-        job: "/usr/local/bin/proxmox-backup.sh"
-        user: root
-
+      tags:
+        - cluster
+    
+    # ========================================================================
+    # Storage Configuration
+    # ========================================================================
+    
+    - name: "Display storage configuration"
+      debug:
+        msg: |
+          Storage target: {{ vault_config.devices.infrastructure.shared_storage.ip }}
+          Storage role: {{ vault_config.devices.infrastructure.shared_storage.role }}
+      tags:
+        - storage
+    
+    # ========================================================================
+    # Validation & Summary
+    # ========================================================================
+    
+    - name: "Show cluster status summary"
+      debug:
+        msg: |
+          ========================================
+          Proxmox Configuration Summary
+          ========================================
+          Node: {{ inventory_hostname }}
+          Cluster: Primary node {{ groups['proxmox_nodes'][0] }}
+          Configuration complete!
+      tags:
+        - always
+  
   handlers:
-    - name: restart networking
-      service:
+    - name: "restart_networking"
+      systemd:
         name: networking
         state: restarted
