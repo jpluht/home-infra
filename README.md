@@ -26,32 +26,32 @@ This personal home lab project aims to document and learn the full process of bu
 
 ## Repository Structure Overview
 
-`
+```
 .
 ├── README.md
 ├── automation
-│   ├── README.md
-│   ├── ansible.cfg
-│   ├── dhs-test-output.xml
-│   ├── group_vars
-│   ├── inventory
-│   ├── playbooks
-│   ├── templates
-│   ├── test_templates.py
-│   └── venv310
+│   ├── README.md
+│   ├── ansible.cfg
+│   ├── dhs-test-output.xml
+│   ├── group_vars
+│   ├── inventory
+│   ├── playbooks
+│   ├── templates
+│   ├── test_templates.py
+│   └── venv310
 ├── diagrams
 ├── dir_maker.sh
 ├── docs
-│   ├── 01-hardware
-│   ├── 02-initial-setup
-│   ├── 03-automation
-│   └── 04-security
+│   ├── 01-hardware
+│   ├── 02-initial-setup
+│   ├── 03-automation
+│   └── 04-security
 ├── requirements.txt
 ├── requirements.yml
 └── structure.txt
 
 13 directories, 9 files
-`
+```
 ---
 
 ## Security & Privacy Notice
