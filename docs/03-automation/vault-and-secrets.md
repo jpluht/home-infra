@@ -17,10 +17,10 @@ Password: 44-character random string (stored in .vault_pass, git-ignored)
 
 ### Encrypted Data (VLAN Names - Lord of the Rings Theme)
 ```yaml
-vault_vlan_10_name: Rivendell      # Infrastructure/OOB
-vault_vlan_20_name: Fellowship     # Trusted devices
+vault_vlan_10_name: INFRA_VLAN      # Infrastructure/OOB
+vault_vlan_20_name: INFRA_VLAN     # Trusted devices
 vault_vlan_30_name: Shire          # User devices
-vault_vlan_40_name: Mordor         # Virtual machines
+vault_vlan_40_name: IOT_VLAN         # Virtual machines
 vault_vlan_50_name: Mirkwood       # IoT/isolated
 ```
 

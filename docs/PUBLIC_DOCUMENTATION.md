@@ -86,7 +86,7 @@ When sharing infrastructure documentation with new operators:
 
 1. **Create a REDACTED version** by replacing:
    - `10.0.10.0/24` → `<MGT_SUBNET>`
-   - `Rivendell` → `<MGT_VLAN>`
+   - `INFRA_VLAN` → `<MGT_VLAN>`
    - `Cisco 3750 TS` → `<CORE_SWITCH>`
    - `10 devices` → `multiple`
 
@@ -111,7 +111,7 @@ Use search-and-replace to anonymize documentation:
 ```bash
 # Replace specific values with placeholders
 sed -i 's/10\.0\.10\.0\/24/<MGT_SUBNET>/g' docs/architecture.md
-sed -i 's/Rivendell/<MGT_VLAN>/g' docs/architecture.md
+sed -i 's/INFRA_VLAN/<MGT_VLAN>/g' docs/architecture.md
 sed -i 's/Cisco 3750/<SWITCH_MODEL>/g' docs/architecture.md
 ```
 

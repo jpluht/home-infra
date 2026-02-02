@@ -26,10 +26,10 @@ This section documents the physical hardware, network topology, and cabling layo
 - **Uplink**: External internet connectivity
 
 ### Network Segmentation (VLANs)
-- **VLAN 10** (Rivendell): Infrastructure & Out-of-Band Management
-- **VLAN 20** (Fellowship): Trusted Devices & Development
+- **VLAN 10** (INFRA_VLAN): Infrastructure & Out-of-Band Management
+- **VLAN 20** (INFRA_VLAN): Trusted Devices & Development
 - **VLAN 30** (Shire): User Devices & Entertainment
-- **VLAN 40** (Mordor): Virtual Machines & Guest Systems
+- **VLAN 40** (IOT_VLAN): Virtual Machines & Guest Systems
 - **VLAN 50** (Mirkwood): IoT & Isolated Devices
 
 ## Quick Links

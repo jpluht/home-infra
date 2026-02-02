@@ -27,10 +27,10 @@ Rules follow **default deny** principle - only approved traffic passes.
 #### Rule Categories
 
 **Inter-VLAN Rules**:
-- Rivendell (VLAN 10) → All other VLANs: DENY (OOB isolation)
-- Fellowship (VLAN 20) → Mordor (VLAN 40): ALLOW (mgmt traffic)
+- INFRA_VLAN (VLAN 10) → All other VLANs: DENY (OOB isolation)
+- INFRA_VLAN (VLAN 20) → IOT_VLAN (VLAN 40): ALLOW (mgmt traffic)
 - Shire (VLAN 30) → External: ALLOW (user internet)
-- Mordor (VLAN 40) → Fellowship (VLAN 20): ALLOW (mgmt reply)
+- IOT_VLAN (VLAN 40) → INFRA_VLAN (VLAN 20): ALLOW (mgmt reply)
 - Mirkwood (VLAN 50) → Any: DENY (complete isolation, inbound only)
 
 **External Access**:
@@ -38,8 +38,8 @@ Rules follow **default deny** principle - only approved traffic passes.
 - Inbound WAN: DENY (default, except configured port forwards)
 
 **Management Access**:
-- SSH to firewall: Limited to Rivendell (VLAN 10) or VPN
-- Web UI (luci): Limited to Fellowship (VLAN 20) or VPN
+- SSH to firewall: Limited to INFRA_VLAN (VLAN 10) or VPN
+- Web UI (luci): Limited to INFRA_VLAN (VLAN 20) or VPN
 
 #### Automation Configuration
 

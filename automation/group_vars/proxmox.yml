@@ -21,9 +21,9 @@ proxmox_cluster_quorum: yes
 # Network Bridge Configuration (loaded from vault-config.vlans)
 # ====================================================================
 # Playbook creates bridges for each VLAN:
-#   vmbr0 → VLAN 10 (Valinor - management)
-#   vmbr1 → VLAN 20 (Rivendell - infrastructure)
-#   vmbr2 → VLAN 40 (Moria - VM guests)
+#   vmbr0 → VLAN 10 (MGMT_VLAN - management)
+#   vmbr1 → VLAN 20 (INFRA_VLAN - infrastructure)
+#   vmbr2 → VLAN 40 (VM_VLAN - VM guests)
 #   etc.
 #
 # Each bridge will have gateway and DHCP configured per vault_config
@@ -75,7 +75,7 @@ ha_enabled: no
 # Monitoring & Logging
 # ====================================================================
 syslog_enabled: yes
-# syslog_server: "192.168.10.100"   # Set in inventory
+# syslog_server: "10.0.10.100"   # Set in inventory
 syslog_facility: "local0"
 
 # ====================================================================
@@ -100,4 +100,4 @@ firewall_default_policy: "drop"
 
 # Allow SSH from management VLAN only (loaded from vault-config)
 firewall_ssh_allowed_sources:
-  - "192.168.10.0/24"    # Valinor management VLAN
+  - "10.0.10.0/24"    # MGMT_VLAN management VLAN

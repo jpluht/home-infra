@@ -8,7 +8,7 @@ Comprehensive testing procedures to verify infrastructure setup and connectivity
 - OPNsense firewall initialized
 - Switches configured with VLANs
 - Proxmox cluster running
-- Test device on VLAN 20 (Fellowship) or VLAN 10 (Rivendell)
+- Test device on VLAN 20 (INFRA_VLAN) or VLAN 10 (INFRA_VLAN)
 
 ## Essential Testing Tools
 
@@ -103,7 +103,7 @@ traceroute google.com
 ### 2.1 Same VLAN Communication
 
 ```bash
-# Test within VLAN 20 (Fellowship - Infrastructure)
+# Test within VLAN 20 (INFRA_VLAN - Infrastructure)
 # From device A on VLAN 20, ping device B on same VLAN
 ping 10.0.20.11
 # Expected: Successful (no VLAN boundary)
@@ -168,23 +168,23 @@ cat /var/lib/dhcp/dhclient.eth0.leases
 
 ## Phase 4: Firewall Rule Testing
 
-### 4.1 Allowed Traffic (Fellowship → Mordor)
+### 4.1 Allowed Traffic (INFRA_VLAN → IOT_VLAN)
 
 ```bash
-# VLAN 20 (Fellowship) → VLAN 40 (Mordor) should be allowed
+# VLAN 20 (INFRA_VLAN) → VLAN 40 (IOT_VLAN) should be allowed
 # Proxmox node on VLAN 20 pinging VM on VLAN 40
 ping 10.0.40.100
 # Expected: Successful (firewall allows this path)
 
 # TCP connection test (SSH)
 ssh admin@10.0.40.100
-# Expected: Connects to VM on Mordor
+# Expected: Connects to VM on IOT_VLAN
 ```
 
 ### 4.2 Blocked Traffic (VLAN 10 Isolation)
 
 ```bash
-# VLAN 10 (Rivendell) should be isolated
+# VLAN 10 (INFRA_VLAN) should be isolated
 # From VLAN 10, attempt to reach VLAN 20
 ping 10.0.20.50
 # Expected: Timeout (firewall blocks outbound from VLAN 10)

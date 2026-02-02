@@ -9,10 +9,10 @@ This section documents all security-related configurations, policies, and best p
 ## Security Layers
 
 ### 1. Network Segmentation (VLAN Isolation)
-- **VLAN 10** (Rivendell): Out-of-band management - isolated, minimal traffic
-- **VLAN 20** (Fellowship): Infrastructure & trusted devices - restricted access
+- **VLAN 10** (INFRA_VLAN): Out-of-band management - isolated, minimal traffic
+- **VLAN 20** (INFRA_VLAN): Infrastructure & trusted devices - restricted access
 - **VLAN 30** (Shire): User devices - limited to necessary services only
-- **VLAN 40** (Mordor): Virtual machines - guest systems with no host access
+- **VLAN 40** (IOT_VLAN): Virtual machines - guest systems with no host access
 - **VLAN 50** (Mirkwood): IoT & untrusted devices - maximum isolation and filtering
 
 **Benefits**: Device compromise is limited to its VLAN; inter-VLAN traffic is filtered by firewall

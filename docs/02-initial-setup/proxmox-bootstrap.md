@@ -7,7 +7,7 @@ Complete setup guide for initializing Proxmox VE cluster nodes.
 - Dedicated x86-64 servers (see [Hardware Overview](../01-hardware/hardware-overview.md))
 - 64GB+ RAM per node (minimum 32GB)
 - SSD storage for OS (120GB minimum)
-- Network connectivity on VLAN 20 (Fellowship)
+- Network connectivity on VLAN 20 (INFRA_VLAN)
 - Console access or Out-of-band (iLO/iDRAC) for first boot
 
 ## Installation Steps

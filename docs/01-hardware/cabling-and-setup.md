@@ -111,7 +111,7 @@ Bottom (Cool aisle):
 - **Cable Type**: Cat6, 1x per node (dual NICs: 2x per node optional)
 - **Length**: 1-3m (within cabinet)
 - **Label**: "ACCESS_CORE_PROXMOX1" (per node)
-- **VLAN**: VLAN 20 (Fellowship) untagged
+- **VLAN**: VLAN 20 (INFRA_VLAN) untagged
 - **Speed**: 1Gbps (all nodes should aggregate 2Gbps+ if dual NICs)
 
 #### Core Switch → GPU Node (Access Port)

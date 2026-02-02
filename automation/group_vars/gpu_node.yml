@@ -32,7 +32,7 @@ llm_logs_dir: "/opt/llm_models/logs"
 # iSCSI Storage Configuration (loaded from vault-config.storage)
 # ====================================================================
 # Vault config provides:
-#   iscsi_target_ip: "192.168.20.40"
+#   iscsi_target_ip: "10.0.20.40"
 #   iscsi_target_iqn: "iqn.2024-01.local.cluster:target01"
 #   iscsi_username: "gpu-node"
 #   iscsi_password: "***"
@@ -77,5 +77,5 @@ inference_log_dir: "/opt/llm_models/logs"
 # ====================================================================
 # Network Configuration (from vault-config.vlans)
 # ====================================================================
-# GPU node typically on VLAN 20 (Rivendell - infrastructure)
+# GPU node typically on VLAN 20 (INFRA_VLAN - infrastructure)
 # Network setup via network-cli at deployment time

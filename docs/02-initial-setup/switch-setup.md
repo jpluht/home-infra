@@ -26,13 +26,13 @@ Step-by-step guide for initial configuration of core and PoE switches.
    Router(config)# ip domain-name lab.local
    ```
 
-### Management VLAN (VLAN 10 - Rivendell)
+### Management VLAN (VLAN 10 - INFRA_VLAN)
 
 ```ios
 ! Create management VLAN
 configure terminal
 vlan 10
-  name Rivendell_Infrastructure
+  name INFRA_VLAN_Infrastructure
   exit
 
 ! Assign management interface
@@ -62,7 +62,7 @@ line vty 0 4
 configure terminal
 
 vlan 20
-  name Fellowship_Trusted
+  name INFRA_VLAN_Trusted
   exit
 
 vlan 30
@@ -70,7 +70,7 @@ vlan 30
   exit
 
 vlan 40
-  name Mordor_VirtualMachines
+  name IOT_VLAN_VirtualMachines
   exit
 
 vlan 50

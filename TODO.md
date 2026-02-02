@@ -98,25 +98,25 @@ ansible-playbook playbooks/deploy-network.yml -i ../.private/inventory/hosts.yml
 
 ### Network Architecture
 - **6 VLANs** with security segmentation:
-  - VLAN 10: Management (Valinor)
-  - VLAN 20: Infrastructure (Rivendell)
+  - VLAN 10: Management (MGMT_VLAN)
+  - VLAN 20: Infrastructure (INFRA_VLAN)
   - VLAN 30: Guests (Shire)
-  - VLAN 40: IoT (Mordor)
+  - VLAN 40: IoT (IOT_VLAN)
   - VLAN 50: DMZ (Minas Tirith)
-  - VLAN 60: Cameras (Barad-dur)
+  - VLAN 60: Cameras (CAMERA_VLAN)
 
 ### Infrastructure Components
-- **OPNsense Firewall** (192.168.10.1)
+- **OPNsense Firewall** (10.0.10.1)
   - VLANs, DHCP, DNS, firewall rules
   - Suricata IDS/IPS
   - NAT configuration
   
-- **Core Switch Stack** (192.168.10.11)
+- **Core Switch Stack** (10.0.10.11)
   - 2x Cisco 3750-48TS-S
   - VLAN configuration
   - Trunk and access ports
   
-- **PoE Switch** (192.168.10.21)
+- **PoE Switch** (10.0.10.21)
   - Cisco 3750-48PS-S
   - PoE power delivery
   - Access port configuration

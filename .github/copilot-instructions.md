@@ -13,7 +13,7 @@ What to do first (short checklist for the assistant)
 
 Project-specific conventions
 - Secrets and site-specific values live in `.private/` (not in git). The repo uses a public/private separation model: public playbooks are generic; `.private/` contains the real inventory and credentials.
-- VLAN naming: LOTR-themed names are used in `automation/group_vars/core_switches.yml` and `.private/vault-config.yml` (e.g., Valinor, Rivendell, Moria, Mordor). Use those files as the authoritative mapping between human names and VLAN IDs.
+- VLAN naming: LOTR-themed names are used in `automation/group_vars/core_switches.yml` and `.private/vault-config.yml` (e.g., MGMT_VLAN, INFRA_VLAN, VM_VLAN, IOT_VLAN). Use those files as the authoritative mapping between human names and VLAN IDs.
 - Ansible patterns: playbooks are structured to include vars from `group_vars` or included local files. The preview playbook demonstrates `include_vars` patterns and writing a JSON dump to `.private/generated/` for inspection.
 - Idempotency and non-destructive defaults: many automation tasks are designed to be safe (run with `--check` first). Prefer generating dry-run outputs and test artifacts in `.private/generated/` rather than changing live config without user approval.
 

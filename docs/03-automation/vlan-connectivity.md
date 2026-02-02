@@ -10,27 +10,27 @@ Last updated: November 27, 2025
 
 | VLAN ID | Name | Subnet | Purpose | DHCP | Access Level |
 |---------|------|--------|---------|------|--------------|
-| **10** | **Valinor** | 192.168.10.0/24 | Management & Infrastructure Control | ❌ Static IPs | 🔴 CRITICAL |
-| **20** | **Rivendell** | 192.168.20.0/24 | Personal Devices & Admin Access | ✅ Yes | 🟠 HIGH |
-| **30** | **Bree** | 192.168.30.0/24 | Family Devices - Entertainment | ✅ Yes | 🟡 MEDIUM |
-| **40** | **Moria** | 192.168.40.0/24 | VMs & Infrastructure Services | ✅ Yes | 🟠 HIGH |
-| **41** | **Barad-dur** | 192.168.41.0/24 | Security Cameras & Surveillance | ✅ Yes | 🟠 MEDIUM-HIGH |
-| **50** | **Mordor** | 192.168.50.0/24 | Untrusted IoT - Isolated | ✅ Yes | 🔵 LOW |
+| **10** | **MGMT_VLAN** | 10.0.10.0/24 | Management & Infrastructure Control | ❌ Static IPs | 🔴 CRITICAL |
+| **20** | **INFRA_VLAN** | 10.0.20.0/24 | Personal Devices & Admin Access | ✅ Yes | 🟠 HIGH |
+| **30** | **USER_VLAN** | 10.0.30.0/24 | Family Devices - Entertainment | ✅ Yes | 🟡 MEDIUM |
+| **40** | **VM_VLAN** | 10.0.40.0/24 | VMs & Infrastructure Services | ✅ Yes | 🟠 HIGH |
+| **41** | **CAMERA_VLAN** | 10.0.41.0/24 | Security Cameras & Surveillance | ✅ Yes | 🟠 MEDIUM-HIGH |
+| **50** | **IOT_VLAN** | 10.0.50.0/24 | Untrusted IoT - Isolated | ✅ Yes | 🔵 LOW |
 
 ---
 
 ## 🌐 VLAN Roles & Devices
 
-### VLAN 10 — Valinor (Management CRITICAL)
+### VLAN 10 — MGMT_VLAN (Management CRITICAL)
 
 **Purpose:** Network infrastructure control — firewalls, switches, management PCs
 
 **Key Devices:**
-- `192.168.10.1` — OPNsense Firewall (Primary)
-- `192.168.10.2` — OPNsense Firewall (Secondary/HA)
-- `192.168.10.20` — Cisco Core Switch
-- `192.168.10.21` — Cisco PoE Switch
-- `192.168.10.100` — Admin PC (static)
+- `10.0.10.1` — OPNsense Firewall (Primary)
+- `10.0.10.2` — OPNsense Firewall (Secondary/HA)
+- `10.0.10.20` — Cisco Core Switch
+- `10.0.10.21` — Cisco PoE Switch
+- `10.0.10.100` — Admin PC (static)
 
 **Security:**
 - ✅ No DHCP (static IPs only)
@@ -40,12 +40,12 @@ Last updated: November 27, 2025
 **Connectivity Rules:**
 - ✅ **CAN reach:** All other VLANs (full access)
 - ✅ **CAN reach:** Internet/WAN (via OPNsense)
-- ✅ **CANNOT be reached from:** Any other VLAN except Rivendell
+- ✅ **CANNOT be reached from:** Any other VLAN except INFRA_VLAN
 - ✅ **Internet access:** YES (WAN via OPNsense eth0)
 
 ---
 
-### VLAN 20 — Rivendell (Personal Devices HIGH)
+### VLAN 20 — INFRA_VLAN (Personal Devices HIGH)
 
 **Purpose:** Personal computers, admin workstations, trusted personal devices
 
@@ -55,20 +55,20 @@ Last updated: November 27, 2025
 - Admin workstation (static)
 
 **Security:**
-- ✅ DHCP enabled (pool: 192.168.20.100-250)
+- ✅ DHCP enabled (pool: 10.0.20.100-250)
 - ✅ Lease time: 24 hours
 - ✅ Can access most infrastructure services
 
 **Connectivity Rules:**
-- ✅ **CAN reach:** Valinor (management)
-- ✅ **CAN reach:** Moria (VMs & home automation)
-- ✅ **CAN reach:** Barad-dur (cameras — view only)
-- ❌ **CANNOT reach:** Mordor (IoT isolation)
+- ✅ **CAN reach:** MGMT_VLAN (management)
+- ✅ **CAN reach:** VM_VLAN (VMs & home automation)
+- ✅ **CAN reach:** CAMERA_VLAN (cameras — view only)
+- ❌ **CANNOT reach:** IOT_VLAN (IoT isolation)
 - ✅ **Internet access:** YES (via OPNsense NAT)
 
 ---
 
-### VLAN 30 — Bree (Family Devices MEDIUM)
+### VLAN 30 — USER_VLAN (Family Devices MEDIUM)
 
 **Purpose:** Entertainment devices, family members' computers, guest devices
 
@@ -79,74 +79,74 @@ Last updated: November 27, 2025
 - Guest devices
 
 **Security:**
-- ✅ DHCP enabled (pool: 192.168.30.100-250)
+- ✅ DHCP enabled (pool: 10.0.30.100-250)
 - ✅ Lease time: 12 hours (shorter — less stable)
 - ⚠️ Limited access to infrastructure
 
 **Connectivity Rules:**
-- ✅ **CAN reach:** Moria ONLY on HTTPS port 443 (Jellyfin media server)
-- ❌ **CANNOT reach:** Valinor (management)
-- ❌ **CANNOT reach:** Rivendell (personal devices)
-- ❌ **CANNOT reach:** Barad-dur (cameras — privacy)
-- ❌ **CANNOT reach:** Mordor (IoT isolation)
+- ✅ **CAN reach:** VM_VLAN ONLY on HTTPS port 443 (Jellyfin media server)
+- ❌ **CANNOT reach:** MGMT_VLAN (management)
+- ❌ **CANNOT reach:** INFRA_VLAN (personal devices)
+- ❌ **CANNOT reach:** CAMERA_VLAN (cameras — privacy)
+- ❌ **CANNOT reach:** IOT_VLAN (IoT isolation)
 - ✅ **Internet access:** YES (via OPNsense NAT)
 
 ---
 
-### VLAN 40 — Moria (VMs & Infrastructure HIGH)
+### VLAN 40 — VM_VLAN (VMs & Infrastructure HIGH)
 
 **Purpose:** Proxmox hypervisors, VMs, home automation, storage services
 
 **Key Devices:**
-- `192.168.40.20` — Proxmox Node 1 (hypervisor)
-- `192.168.40.21` — Proxmox Node 2
-- `192.168.40.22` — Proxmox Node 3
-- `192.168.40.10` — Home Assistant VM
-- `192.168.40.50` — NAS / Shared Storage
-- `192.168.40.51` — TrueNAS VM
-- `192.168.40.52` — Jellyfin Media Server
+- `10.0.40.20` — Proxmox Node 1 (hypervisor)
+- `10.0.40.21` — Proxmox Node 2
+- `10.0.40.22` — Proxmox Node 3
+- `10.0.40.10` — Home Assistant VM
+- `10.0.40.50` — NAS / Shared Storage
+- `10.0.40.51` — TrueNAS VM
+- `10.0.40.52` — Jellyfin Media Server
 
 **Security:**
-- ✅ DHCP enabled (pool: 192.168.40.100-250)
+- ✅ DHCP enabled (pool: 10.0.40.100-250)
 - ✅ Lease time: 1 hour (VMs may be ephemeral)
 - ✅ Critical infrastructure VLAN
 
 **Connectivity Rules:**
-- ✅ **CAN reach:** Valinor (management via SSH, API)
-- ✅ **CAN reach:** Mordor (IoT management)
-- ✅ **CAN reach:** Barad-dur (for NVR camera streams)
-- ❌ **CANNOT be reached from:** Bree (except port 443 to Jellyfin)
-- ❌ **CANNOT be reached from:** Mordor (except from Moria management)
+- ✅ **CAN reach:** MGMT_VLAN (management via SSH, API)
+- ✅ **CAN reach:** IOT_VLAN (IoT management)
+- ✅ **CAN reach:** CAMERA_VLAN (for NVR camera streams)
+- ❌ **CANNOT be reached from:** USER_VLAN (except port 443 to Jellyfin)
+- ❌ **CANNOT be reached from:** IOT_VLAN (except from VM_VLAN management)
 - ✅ **Internet access:** YES (via OPNsense NAT, but generally not needed)
 
 ---
 
-### VLAN 41 — Barad-dur (Security Cameras MEDIUM-HIGH)
+### VLAN 41 — CAMERA_VLAN (Security Cameras MEDIUM-HIGH)
 
 **Purpose:** IP cameras, NVR storage, surveillance system — relatively isolated
 
 **Key Devices:**
-- `192.168.41.10` — Camera Front
-- `192.168.41.11` — Camera Back
-- `192.168.41.20` — NVR Storage / Video Recording Server
+- `10.0.41.10` — Camera Front
+- `10.0.41.11` — Camera Back
+- `10.0.41.20` — NVR Storage / Video Recording Server
 
 **Security:**
-- ✅ DHCP enabled (pool: 192.168.41.100-250)
+- ✅ DHCP enabled (pool: 10.0.41.100-250)
 - ✅ Lease time: 24 hours (stable devices)
 - ⚠️ Limited outbound access (DNS only to management, internet for cloud features)
 
 **Connectivity Rules:**
-- ✅ **CAN reach:** Valinor DNS (port 53 UDP) — domain resolution only
+- ✅ **CAN reach:** MGMT_VLAN DNS (port 53 UDP) — domain resolution only
 - ✅ **CAN reach:** Internet/WAN (port 53 DNS, HTTPS for cloud services)
-- ✅ **CAN reach FROM:** Rivendell (view camera feeds)
-- ✅ **CAN reach FROM:** Moria (NVR recording)
-- ❌ **CANNOT reach:** Moria infrastructure directly
-- ❌ **CANNOT reach:** Rivendell
-- ❌ **CANNOT reach:** Mordor
+- ✅ **CAN reach FROM:** INFRA_VLAN (view camera feeds)
+- ✅ **CAN reach FROM:** VM_VLAN (NVR recording)
+- ❌ **CANNOT reach:** VM_VLAN infrastructure directly
+- ❌ **CANNOT reach:** INFRA_VLAN
+- ❌ **CANNOT reach:** IOT_VLAN
 
 ---
 
-### VLAN 50 — Mordor (Untrusted IoT LOW)
+### VLAN 50 — IOT_VLAN (Untrusted IoT LOW)
 
 **Purpose:** Untrusted IoT devices, smart plugs, robots, third-party devices — ISOLATED
 
@@ -158,20 +158,20 @@ Last updated: November 27, 2025
 - Any third-party cloud-connected device
 
 **Security:**
-- ✅ DHCP enabled (pool: 192.168.50.100-250)
+- ✅ DHCP enabled (pool: 10.0.50.100-250)
 - ✅ Lease time: 24 hours
 - 🔴 **HIGHLY RESTRICTED** — Cannot access any trusted infrastructure
 
 **Connectivity Rules:**
-- ✅ **CAN reach:** Valinor DNS (port 53 UDP) — domain resolution only
+- ✅ **CAN reach:** MGMT_VLAN DNS (port 53 UDP) — domain resolution only
 - ✅ **CAN reach:** Internet/WAN (HTTPS, NTP, specific ports only)
-- ✅ **CAN reach FROM:** Moria (management/control only)
+- ✅ **CAN reach FROM:** VM_VLAN (management/control only)
 - ❌ **CANNOT reach:** Any other internal VLAN
-- ❌ **CANNOT reach:** Valinor (except DNS)
-- ❌ **CANNOT reach:** Rivendell
-- ❌ **CANNOT reach:** Bree
-- ❌ **CANNOT reach:** Barad-dur
-- ❌ **CANNOT reach:** Moria (except from Moria control)
+- ❌ **CANNOT reach:** MGMT_VLAN (except DNS)
+- ❌ **CANNOT reach:** INFRA_VLAN
+- ❌ **CANNOT reach:** USER_VLAN
+- ❌ **CANNOT reach:** CAMERA_VLAN
+- ❌ **CANNOT reach:** VM_VLAN (except from VM_VLAN control)
 
 ---
 
@@ -185,9 +185,9 @@ Last updated: November 27, 2025
 
 ### Explicit ALLOW Rules (Priority Order)
 
-#### Rule 1: Valinor → Anywhere (CRITICAL)
+#### Rule 1: MGMT_VLAN → Anywhere (CRITICAL)
 ```
-From: VLAN 10 (Valinor)
+From: VLAN 10 (MGMT_VLAN)
 To: ANY
 Protocol: ANY
 Action: ALLOW
@@ -197,10 +197,10 @@ Priority: 100
 
 ---
 
-#### Rule 2: Rivendell → Valinor (Management Access)
+#### Rule 2: INFRA_VLAN → MGMT_VLAN (Management Access)
 ```
-From: VLAN 20 (Rivendell)
-To: VLAN 10 (Valinor)
+From: VLAN 20 (INFRA_VLAN)
+To: VLAN 10 (MGMT_VLAN)
 Protocol: ANY
 Action: ALLOW
 Priority: 200
@@ -209,10 +209,10 @@ Priority: 200
 
 ---
 
-#### Rule 3: Rivendell → Moria (Infrastructure Services)
+#### Rule 3: INFRA_VLAN → VM_VLAN (Infrastructure Services)
 ```
-From: VLAN 20 (Rivendell)
-To: VLAN 40 (Moria)
+From: VLAN 20 (INFRA_VLAN)
+To: VLAN 40 (VM_VLAN)
 Protocol: ANY
 Action: ALLOW
 Priority: 200
@@ -221,10 +221,10 @@ Priority: 200
 
 ---
 
-#### Rule 4: Rivendell → Barad-dur (Camera Viewing)
+#### Rule 4: INFRA_VLAN → CAMERA_VLAN (Camera Viewing)
 ```
-From: VLAN 20 (Rivendell)
-To: VLAN 41 (Barad-dur)
+From: VLAN 20 (INFRA_VLAN)
+To: VLAN 41 (CAMERA_VLAN)
 Protocol: ANY
 Action: ALLOW
 Priority: 200
@@ -233,10 +233,10 @@ Priority: 200
 
 ---
 
-#### Rule 5: Bree → Moria HTTPS Only (Jellyfin Media)
+#### Rule 5: USER_VLAN → VM_VLAN HTTPS Only (Jellyfin Media)
 ```
-From: VLAN 30 (Bree)
-To: VLAN 40 (Moria)
+From: VLAN 30 (USER_VLAN)
+To: VLAN 40 (VM_VLAN)
 Protocol: TCP
 Port: 443 (HTTPS only)
 Action: ALLOW
@@ -246,10 +246,10 @@ Priority: 300
 
 ---
 
-#### Rule 6: Moria → Valinor (Cluster Management)
+#### Rule 6: VM_VLAN → MGMT_VLAN (Cluster Management)
 ```
-From: VLAN 40 (Moria)
-To: VLAN 10 (Valinor)
+From: VLAN 40 (VM_VLAN)
+To: VLAN 10 (MGMT_VLAN)
 Protocol: ANY
 Action: ALLOW
 Priority: 200
@@ -258,10 +258,10 @@ Priority: 200
 
 ---
 
-#### Rule 7: Moria → Mordor (IoT Control)
+#### Rule 7: VM_VLAN → IOT_VLAN (IoT Control)
 ```
-From: VLAN 40 (Moria)
-To: VLAN 50 (Mordor)
+From: VLAN 40 (VM_VLAN)
+To: VLAN 50 (IOT_VLAN)
 Protocol: ANY
 Action: ALLOW
 Priority: 200
@@ -270,10 +270,10 @@ Priority: 200
 
 ---
 
-#### Rule 8: Barad-dur → Valinor DNS Only
+#### Rule 8: CAMERA_VLAN → MGMT_VLAN DNS Only
 ```
-From: VLAN 41 (Barad-dur)
-To: VLAN 10 (Valinor)
+From: VLAN 41 (CAMERA_VLAN)
+To: VLAN 10 (MGMT_VLAN)
 Protocol: UDP
 Port: 53 (DNS)
 Action: ALLOW
@@ -283,9 +283,9 @@ Priority: 300
 
 ---
 
-#### Rule 9: Barad-dur → Internet (Cloud Services)
+#### Rule 9: CAMERA_VLAN → Internet (Cloud Services)
 ```
-From: VLAN 41 (Barad-dur)
+From: VLAN 41 (CAMERA_VLAN)
 To: Internet/WAN
 Protocol: TCP/UDP
 Port: 443, 53, 123 (HTTPS, DNS, NTP)
@@ -297,10 +297,10 @@ NAT: Applied
 
 ---
 
-#### Rule 10: Mordor → Valinor DNS Only
+#### Rule 10: IOT_VLAN → MGMT_VLAN DNS Only
 ```
-From: VLAN 50 (Mordor)
-To: VLAN 10 (Valinor)
+From: VLAN 50 (IOT_VLAN)
+To: VLAN 10 (MGMT_VLAN)
 Protocol: UDP
 Port: 53 (DNS)
 Action: ALLOW
@@ -310,9 +310,9 @@ Priority: 300
 
 ---
 
-#### Rule 11: Mordor → Internet (Cloud Services)
+#### Rule 11: IOT_VLAN → Internet (Cloud Services)
 ```
-From: VLAN 50 (Mordor)
+From: VLAN 50 (IOT_VLAN)
 To: Internet/WAN
 Protocol: TCP/UDP
 Port: 443, 53, 123 (HTTPS, DNS, NTP)
@@ -326,21 +326,21 @@ NAT: Applied
 
 ### Explicit DENY Rules (Lower Priority)
 
-#### Deny Rule 1: Mordor → Other VLANs
+#### Deny Rule 1: IOT_VLAN → Other VLANs
 ```
-From: VLAN 50 (Mordor)
+From: VLAN 50 (IOT_VLAN)
 To: VLAN 20, 30, 40, 41
 Protocol: ANY
 Action: DENY
 Priority: 50
 ```
-**Rationale:** IoT MUST NOT access any trusted infrastructure except via Moria.
+**Rationale:** IoT MUST NOT access any trusted infrastructure except via VM_VLAN.
 
 ---
 
-#### Deny Rule 2: Bree → Untrusted VLANs
+#### Deny Rule 2: USER_VLAN → Untrusted VLANs
 ```
-From: VLAN 30 (Bree)
+From: VLAN 30 (USER_VLAN)
 To: VLAN 20, 40, 50
 Protocol: ANY
 Action: DENY
@@ -369,27 +369,27 @@ NAT: Apply
 
 ### Primary Path: OPNsense
 
-**Gateway:** `192.168.10.1` (Valinor VLAN)
+**Gateway:** `10.0.10.1` (MGMT_VLAN VLAN)
 
 **Uplink:** `em0` (WAN interface on OPNsense)
 
 **Routing:**
-- Internal → Valinor gateway → OPNsense em0 → ISP gateway → Internet
+- Internal → MGMT_VLAN gateway → OPNsense em0 → ISP gateway → Internet
 - Default route: `0.0.0.0/0` → ISP gateway (via em0)
 
 ### Which VLANs Can Reach Internet?
 
 | VLAN | Access | Via | Port Restrictions |
 |------|--------|-----|-------------------|
-| **Valinor** | ✅ Full | Direct NAT | None (management) |
-| **Rivendell** | ✅ Full | NAT | None |
-| **Bree** | ✅ Full | NAT | None |
-| **Moria** | ✅ Full | NAT | None (but rarely needed) |
-| **Barad-dur** | ✅ Limited | NAT | DNS (53), HTTPS (443), NTP (123) |
-| **Mordor** | ✅ Limited | NAT | DNS (53), HTTPS (443), NTP (123) |
+| **MGMT_VLAN** | ✅ Full | Direct NAT | None (management) |
+| **INFRA_VLAN** | ✅ Full | NAT | None |
+| **USER_VLAN** | ✅ Full | NAT | None |
+| **VM_VLAN** | ✅ Full | NAT | None (but rarely needed) |
+| **CAMERA_VLAN** | ✅ Limited | NAT | DNS (53), HTTPS (443), NTP (123) |
+| **IOT_VLAN** | ✅ Limited | NAT | DNS (53), HTTPS (443), NTP (123) |
 
 ### No Direct Internet Access From:
-- ❌ Internal networks (192.168.0.0/16) — all traffic via OPNsense NAT
+- ❌ Internal networks (10.0.0.0/16) — all traffic via OPNsense NAT
 - ❌ Any device directly routed, must go through OPNsense firewall
 
 ---
@@ -397,14 +397,14 @@ NAT: Apply
 ## 🔗 Inter-VLAN Communication Matrix
 
 ```
-From\To    Valinor  Rivendell  Bree  Moria  Barad-dur  Mordor   Internet
+From\To    MGMT_VLAN  INFRA_VLAN  USER_VLAN  VM_VLAN  CAMERA_VLAN  IOT_VLAN   Internet
 ────────────────────────────────────────────────────────────────────────
-Valinor      —         ✅        ✅     ✅      ✅        ✅        ✅
-Rivendell   ✅✅        —         ❌     ✅      ✅        ❌        ✅
-Bree        ❌         ❌         —    443SSL   ❌        ❌        ✅
-Moria       ✅         ❌         ❌     —      ✅        ✅        ✅
-Barad-dur  DNS        ✅        ❌     ✅       —        ❌        ✅*
-Mordor     DNS        ❌        ❌    ✅       ❌        —         ✅*
+MGMT_VLAN      —         ✅        ✅     ✅      ✅        ✅        ✅
+INFRA_VLAN   ✅✅        —         ❌     ✅      ✅        ❌        ✅
+USER_VLAN        ❌         ❌         —    443SSL   ❌        ❌        ✅
+VM_VLAN       ✅         ❌         ❌     —      ✅        ✅        ✅
+CAMERA_VLAN  DNS        ✅        ❌     ✅       —        ❌        ✅*
+IOT_VLAN     DNS        ❌        ❌    ✅       ❌        —         ✅*
 ────────────────────────────────────────────────────────────────────────
 Legend: ✅ = Full access | ❌ = Blocked | 443SSL = HTTPS only | DNS = DNS only | ✅* = Limited ports
 ```
@@ -415,28 +415,28 @@ Legend: ✅ = Full access | ❌ = Blocked | 443SSL = HTTPS only | DNS = DNS only
 
 ### 🟢 Full Inter-VLAN Communication
 
-1. **Valinor ↔ Everyone** (Management controls all)
-2. **Rivendell ↔ Valinor** (Admin to management)
-3. **Rivendell ↔ Moria** (Admin to VMs)
-4. **Rivendell ↔ Barad-dur** (View cameras)
-5. **Moria ↔ Barad-dur** (NVR video recording)
-6. **Moria ↔ Mordor** (Home automation controls IoT)
+1. **MGMT_VLAN ↔ Everyone** (Management controls all)
+2. **INFRA_VLAN ↔ MGMT_VLAN** (Admin to management)
+3. **INFRA_VLAN ↔ VM_VLAN** (Admin to VMs)
+4. **INFRA_VLAN ↔ CAMERA_VLAN** (View cameras)
+5. **VM_VLAN ↔ CAMERA_VLAN** (NVR video recording)
+6. **VM_VLAN ↔ IOT_VLAN** (Home automation controls IoT)
 
 ### 🟡 Limited Inter-VLAN Communication
 
-1. **Bree → Moria** (HTTPS 443 only — Jellyfin)
-2. **Barad-dur → Valinor** (DNS 53 UDP only)
-3. **Mordor → Valinor** (DNS 53 UDP only)
-4. **Barad-dur → Internet** (DNS, HTTPS, NTP)
-5. **Mordor → Internet** (DNS, HTTPS, NTP)
+1. **USER_VLAN → VM_VLAN** (HTTPS 443 only — Jellyfin)
+2. **CAMERA_VLAN → MGMT_VLAN** (DNS 53 UDP only)
+3. **IOT_VLAN → MGMT_VLAN** (DNS 53 UDP only)
+4. **CAMERA_VLAN → Internet** (DNS, HTTPS, NTP)
+5. **IOT_VLAN → Internet** (DNS, HTTPS, NTP)
 
 ### 🔴 Blocked Inter-VLAN Communication
 
-1. **Mordor ❌ Everything** (except Moria management, Valinor DNS, Internet)
-2. **Bree ❌ Rivendell** (family cannot see personal devices)
-3. **Bree ❌ Moria** (except HTTPS port 443)
-4. **Bree ❌ Barad-dur** (family cannot see cameras — privacy)
-5. **Bree ❌ Mordor** (family cannot control IoT)
+1. **IOT_VLAN ❌ Everything** (except VM_VLAN management, MGMT_VLAN DNS, Internet)
+2. **USER_VLAN ❌ INFRA_VLAN** (family cannot see personal devices)
+3. **USER_VLAN ❌ VM_VLAN** (except HTTPS port 443)
+4. **USER_VLAN ❌ CAMERA_VLAN** (family cannot see cameras — privacy)
+5. **USER_VLAN ❌ IOT_VLAN** (family cannot control IoT)
 
 ---
 
@@ -445,26 +445,26 @@ Legend: ✅ = Full access | ❌ = Blocked | 443SSL = HTTPS only | DNS = DNS only
 ### Test VLAN 20 → VLAN 40
 
 ```bash
-# From a Rivendell device (192.168.20.x)
-ping 192.168.40.20         # Should work (Proxmox node)
-ssh admin@192.168.40.20    # Should work (SSH access)
+# From a INFRA_VLAN device (10.0.20.x)
+ping 10.0.40.20         # Should work (Proxmox node)
+ssh admin@10.0.40.20    # Should work (SSH access)
 ```
 
 ### Test VLAN 30 → VLAN 40
 
 ```bash
-# From a Bree device (192.168.30.x)
-ping 192.168.40.52         # Should FAIL (blocked by firewall)
-curl https://192.168.40.52 # Should work (Jellyfin HTTPS on port 443)
-ssh admin@192.168.40.20    # Should FAIL (blocked by firewall)
+# From a USER_VLAN device (10.0.30.x)
+ping 10.0.40.52         # Should FAIL (blocked by firewall)
+curl https://10.0.40.52 # Should work (Jellyfin HTTPS on port 443)
+ssh admin@10.0.40.20    # Should FAIL (blocked by firewall)
 ```
 
 ### Test VLAN 50 → VLAN 20
 
 ```bash
-# From a Mordor device (192.168.50.x)
-ping 192.168.20.10         # Should FAIL (explicitly denied)
-nslookup example.com       # Should work (DNS to Valinor)
+# From a IOT_VLAN device (10.0.50.x)
+ping 10.0.20.10         # Should FAIL (explicitly denied)
+nslookup example.com       # Should work (DNS to MGMT_VLAN)
 ```
 
 ### Test Internet Access

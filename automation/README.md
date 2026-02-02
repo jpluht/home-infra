@@ -274,16 +274,16 @@ ansible-playbook playbooks/gpu_node.yml \
 ```yaml
 vlans:
   - id: 10
-    name: "Valinor"
-    subnet: "192.168.10.0/24"
-    gateway: "192.168.10.1"
+    name: "MGMT_VLAN"
+    subnet: "10.0.10.0/24"
+    gateway: "10.0.10.1"
     dhcp_enabled: false
     access_level: "management"
   
   - id: 20
-    name: "Rivendell"
-    subnet: "192.168.20.0/24"
-    gateway: "192.168.20.1"
+    name: "INFRA_VLAN"
+    subnet: "10.0.20.0/24"
+    gateway: "10.0.20.1"
     dhcp_enabled: true
     access_level: "infrastructure"
   
@@ -293,12 +293,12 @@ devices:
   management:
     - name: "admin-pc"
       vlan: 10
-      ip: "192.168.10.100"
+      ip: "10.0.10.100"
   
   infrastructure:
     - name: "proxmox-node-1"
       vlan: 20
-      ip: "192.168.20.10"
+      ip: "10.0.20.10"
   
   # ... more devices ...
 
@@ -322,7 +322,7 @@ dhcp:
     enabled: false
   rivendell:
     enabled: true
-    pool: "192.168.20.100 - 192.168.20.200"
+    pool: "10.0.20.100 - 10.0.20.200"
     lease_time: 3600
   
   # ... more VLAN DHCP ...
@@ -333,9 +333,9 @@ dns:
     - "1.0.0.1"
   local_records:
     - name: "fw.lab.local"
-      ip: "192.168.10.1"
+      ip: "10.0.10.1"
     - name: "gateway.lab.local"
-      ip: "192.168.10.1"
+      ip: "10.0.10.1"
   
   # ... more DNS ...
 
@@ -484,7 +484,7 @@ ansible-playbook playbooks/deploy-network.yml -vvv
 ansible all -i .private/inventory/hosts.yml -m ping -u admin
 
 # Check SSH access
-ssh -i ~/.ssh/ansible_rsa admin@192.168.10.20
+ssh -i ~/.ssh/ansible_rsa admin@10.0.10.20
 
 # Try with explicit network OS
 ansible core_switches -i .private/inventory/hosts.yml \
@@ -500,7 +500,7 @@ ansible core_switches -i .private/inventory/hosts.yml \
 
 # Test API manually
 curl -k -X GET \
-  https://192.168.10.1/api/core/system/status \
+  https://10.0.10.1/api/core/system/status \
   -H "X-API-Key: YOUR_KEY" \
   -H "X-API-Secret: YOUR_SECRET"
 ```

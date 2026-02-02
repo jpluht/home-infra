@@ -39,10 +39,10 @@ All VLANs are tagged on a single trunk link from OPNsense through Core Switch to
 
 | VLAN | Name | Purpose | Subnet | Gateway | Hosts |
 |------|------|---------|--------|---------|-------|
-| 10 | Rivendell | Infrastructure & OOB | 10.0.10.0/24 | 10.0.10.1 | Switches, OPNsense, OOB serial |
-| 20 | Fellowship | Trusted Infrastructure | 10.0.20.0/24 | 10.0.20.1 | Proxmox, GPU Node, storage |
+| 10 | INFRA_VLAN | Infrastructure & OOB | 10.0.10.0/24 | 10.0.10.1 | Switches, OPNsense, OOB serial |
+| 20 | INFRA_VLAN | Trusted Infrastructure | 10.0.20.0/24 | 10.0.20.1 | Proxmox, GPU Node, storage |
 | 30 | Shire | User Devices | 10.0.30.0/24 | 10.0.30.1 | Laptops, phones, entertainment |
-| 40 | Mordor | Virtual Machines | 10.0.40.0/24 | 10.0.40.1 | VMs in Proxmox cluster |
+| 40 | IOT_VLAN | Virtual Machines | 10.0.40.0/24 | 10.0.40.1 | VMs in Proxmox cluster |
 | 50 | Mirkwood | IoT/Isolated | 10.0.50.0/24 | 10.0.50.1 | IoT devices, cameras, isolated |
 
 ## Network Device Inventory
@@ -68,7 +68,7 @@ All VLANs are tagged on a single trunk link from OPNsense through Core Switch to
 - **Ports**: 48x 1GbE + 2x 10GbE uplink (typical)
 - **Connection**: Trunk link to OPNsense, access ports to servers
 - **Hostname**: core_sw_1 (anonymized)
-- **Management VLAN**: VLAN 10 (Rivendell)
+- **Management VLAN**: VLAN 10 (INFRA_VLAN)
 - **Configuration**: Ansible-managed via cisco.ios module (SSH)
 - **Protocols**: STP, VLAN trunking, port-channel for redundancy
 
@@ -78,7 +78,7 @@ All VLANs are tagged on a single trunk link from OPNsense through Core Switch to
 - **Power Budget**: 740W PoE+ (supports ~30 devices)
 - **Connection**: Uplink trunk to Core Switch
 - **Hostname**: poe_sw_1 (anonymized)
-- **Management VLAN**: VLAN 10 (Rivendell)
+- **Management VLAN**: VLAN 10 (INFRA_VLAN)
 - **Configuration**: Ansible-managed via cisco.ios module (SSH)
 - **Powered Devices**: APs, IP cameras, phones (on appropriate VLANs)
 
@@ -87,7 +87,7 @@ All VLANs are tagged on a single trunk link from OPNsense through Core Switch to
 #### Proxmox Cluster
 - **Nodes**: 2-3 hypervisors (typically on VLAN 20)
 - **Storage**: iSCSI backend on GPU node (VLAN 20)
-- **VMs**: Run on VLAN 40 (Mordor) for guest isolation
+- **VMs**: Run on VLAN 40 (IOT_VLAN) for guest isolation
 - **Management**: SSH-based Ansible automation
 - **Networking**: Bridge mode connecting VMs to appropriate VLANs
 

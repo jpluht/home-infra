@@ -20,9 +20,9 @@ ansible_become_method: enable
 # 
 # Vault config structure (per VLAN):
 #   - id: 10
-#     name: "Valinor"
-#     subnet: "192.168.10.0/24"
-#     gateway: "192.168.10.1"
+#     name: "MGMT_VLAN"
+#     subnet: "10.0.10.0/24"
+#     gateway: "10.0.10.1"
 #     access_level: "management"
 #
 # This playbook loads vlans via:
@@ -73,7 +73,7 @@ storm_control_unicast_level: 10
 # ====================================================================
 # Management Interface Configuration
 # ====================================================================
-# Management VLAN on core switches (typically VLAN 10 - Valinor)
+# Management VLAN on core switches (typically VLAN 10 - MGMT_VLAN)
 mgmt_vlan: 10
 # mgmt_ip will be defined per-host in inventory
 

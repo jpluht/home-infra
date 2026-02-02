@@ -23,9 +23,9 @@ This guide combines project status tracking with detailed deployment instruction
 - [x] Define comprehensive inter-VLAN firewall rules (10 rules)
 - [x] Add NAT rules for internet access
 - [x] Configure IDS/IPS rules in Suricata
-- [x] Add Jellyfin access for family (Bree → Moria)
-- [x] Add camera internet access (Barad-dur → Internet)
-- [x] Complete IoT isolation (Mordor blocked)
+- [x] Add Jellyfin access for family (USER_VLAN → VM_VLAN)
+- [x] Add camera internet access (CAMERA_VLAN → Internet)
+- [x] Complete IoT isolation (IOT_VLAN blocked)
 
 ### ✅ COMPLETED - Phase 4: Ansible Environment Setup
 - [x] Set up Python virtual environment
@@ -140,7 +140,7 @@ Update with your actual:
 **Example changes:**
 ```yaml
 # Before (example)
-opnsense_ip: "192.168.10.1"
+opnsense_ip: "10.0.10.1"
 
 # After (your actual IP)
 opnsense_ip: "10.0.10.1"

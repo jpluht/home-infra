@@ -121,7 +121,7 @@ Services → DHCP Server:
 
 Create DHCP configuration for each VLAN (via Ansible later, but manual setup here):
 
-**VLAN 10 (Rivendell - Infrastructure)**:
+**VLAN 10 (INFRA_VLAN - Infrastructure)**:
 ```
 Range: 10.0.10.50 - 10.0.10.200
 Gateway: 10.0.10.1
@@ -129,7 +129,7 @@ DNS Servers: 10.0.10.1
 Lease Time: 3600
 ```
 
-**VLAN 20 (Fellowship - Trusted)**:
+**VLAN 20 (INFRA_VLAN - Trusted)**:
 ```
 Range: 10.0.20.50 - 10.0.20.200
 Gateway: 10.0.20.1
@@ -186,7 +186,7 @@ For each VLAN (10-50):
 Parent Interface: LAN (trunk port)
 VLAN Tag: [10, 20, 30, 40, 50]
 VLAN Priority: 0
-Description: Rivendell (or appropriate name)
+Description: INFRA_VLAN (or appropriate name)
 ```
 
 ### Assign IP to Each VLAN Interface
@@ -207,8 +207,8 @@ Firewall → Rules → Add (for each):
 **Allow Inter-VLAN Traffic (Selective)**:
 ```
 Protocol: TCP/UDP
-Source: VLAN 20 (Fellowship)
-Destination: VLAN 40 (Mordor)
+Source: VLAN 20 (INFRA_VLAN)
+Destination: VLAN 40 (IOT_VLAN)
 Port: Any
 Action: Pass
 ```
@@ -225,7 +225,7 @@ Action: Block
 **Block VLAN 10 to Other VLANs** (OOB isolation):
 ```
 Protocol: Any
-Source: VLAN 10 (Rivendell)
+Source: VLAN 10 (INFRA_VLAN)
 Destination: VLANs 20,30,40,50
 Port: Any
 Action: Block

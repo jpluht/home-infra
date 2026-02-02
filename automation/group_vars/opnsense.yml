@@ -23,14 +23,14 @@ opnsense_validate_certs: no
 # Example structure (populated by vault-config.yml):
 # vlans:
 #   - id: 10
-#     name: "Valinor"
-#     subnet: "192.168.10.0/24"
-#     gateway: "192.168.10.1"
+#     name: "MGMT_VLAN"
+#     subnet: "10.0.10.0/24"
+#     gateway: "10.0.10.1"
 #     dhcp_enabled: false
 #   - id: 20
-#     name: "Rivendell"
-#     subnet: "192.168.20.0/24"
-#     gateway: "192.168.20.1"
+#     name: "INFRA_VLAN"
+#     subnet: "10.0.20.0/24"
+#     gateway: "10.0.20.1"
 #     dhcp_enabled: true
 
 # ====================================================================
@@ -63,7 +63,7 @@ firewall_log_all_drops: yes
 # ====================================================================
 suricata_enabled: yes
 suricata_eve_log: yes
-suricata_home_net: "[192.168.0.0/16]"
+suricata_home_net: "[10.0.0.0/16]"
 
 # ====================================================================
 # NTP Configuration
@@ -79,7 +79,7 @@ ntp_servers:
 # High Availability (if configured)
 # ====================================================================
 ha_enabled: no
-# ha_virtual_ip: "192.168.10.254"
+# ha_virtual_ip: "10.0.10.254"
 # ha_sync_interface: "em0"
 
 # ====================================================================
